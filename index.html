@@ -54,6 +54,7 @@ const KV = 1.35e-5;                             // constante de la válvula (m^3
 const BOTTLE_R = 0.08, BOTTLE_H = 0.30;         // frasco de Mariotte (m)
 const PROB_R = 0.0252;                          // radio interior probeta (500 ml = 0.25 m)
 const PROB_CAP = 520;                           // ml antes de rebalsar
+const NREP = 2;                                 // repeticiones de tiempo por volumen
 
 // ---------------------------------------------------------------- geometría (m, relativa a la mesa)
 const AXIS_Y = 0.40;          // eje del Venturi
@@ -323,8 +324,36 @@ label('Medidor de Venturi', 0.02, 0.475, 0.03);
 label('Sección mayor (A1)', -0.12, AXIS_Y + 0.035, 0.03, 0.12);
 label('Sección menor (A2)', 0.12, AXIS_Y + 0.035, 0.03, 0.12);
 label('Manómetro de Hg', 0.0, 0.055, 0.04, 0.13);
-label('Válvula de salida', X_OUT - 0.02, AXIS_Y + 0.085, 0.03, 0.12);
 label('Probeta 500 ml', PROB_X + 0.02, 0.33 - 0.02, 0.07, 0.11);
+// etiquetas de estado de las válvulas (ABIERTA / CERRADA)
+function stateLabel(x, y, z, w, parent) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128; const k = c.getContext('2d');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthTest: false }));
+  m.renderOrder = 10; m.position.set(x, y, z); parent.add(m);
+  let last = '';
+  return function set(title, open, extra = '') {
+    const key = title + open + extra; if (key === last) return; last = key;
+    k.clearRect(0, 0, 512, 128);
+    k.fillStyle = open ? 'rgba(30,140,70,0.95)' : 'rgba(190,40,35,0.95)'; roundRect(k, 0, 0, 512, 128, 28); k.fill();
+    k.strokeStyle = 'rgba(255,255,255,0.85)'; k.lineWidth = 5; roundRect(k, 4, 4, 504, 120, 25); k.stroke();
+    k.fillStyle = '#fff'; k.textAlign = 'center'; k.textBaseline = 'middle';
+    k.font = 'bold 30px sans-serif'; k.fillText(title, 256, 34);
+    k.font = 'bold 54px sans-serif'; k.fillText((open ? 'ABIERTA' : 'CERRADA') + extra, 256, 86);
+    t.needsUpdate = true;
+  };
+}
+const lblFeed = stateLabel(BOTTLE_X + BOTTLE_R + 0.03, BOTTLE_Y0 - 0.04, 0.06, 0.12, app);
+const lblOut = stateLabel(X_OUT, AXIS_Y + 0.11, 0.03, 0.13, app);
+const lblManL = stateLabel(MAN_XL - 0.055, MAN_TOP + 0.005, 0.05, 0.09, app);
+const lblManR = stateLabel(MAN_XR + 0.055, MAN_TOP + 0.005, 0.05, 0.09, app);
+function updateValveLabels() {
+  lblFeed('Llave del frasco', S.feedOpen);
+  lblOut('Válvula de salida', S.outlet > 0, S.outlet > 0 ? ' ' + S.outlet + '%' : '');
+  lblManL('Válv. manómetro', S.manOpen);
+  lblManR('Válv. manómetro', S.manOpen);
+}
+updateValveLabels();
 const swLabelCanvas = document.createElement('canvas'); swLabelCanvas.width = 512; swLabelCanvas.height = 160;
 const swTex = new THREE.CanvasTexture(swLabelCanvas); swTex.colorSpace = THREE.SRGBColorSpace;
 const swMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.047), new THREE.MeshBasicMaterial({ map: swTex, transparent: true }));
@@ -389,7 +418,7 @@ const STEP_TXT = [
   'Estabilizar el flujo: h constante con el frasco de Mariotte.',
   'Con la salida cerrada, verificar que las ramas del manómetro estén niveladas.',
   'Cerrar las dos válvulas del manómetro.',
-  'Abrir la salida. Medir 5 veces el tiempo para 100 ml (desde la marca de 100 ml).',
+  'Abrir la salida. Medir 2 veces el tiempo para 100 ml (desde la marca de 100 ml).',
   'Repetir para 200, 300 y 400 ml.',
   'Abrir las válvulas del manómetro y medir la diferencia de alturas Δh.',
   'Registrar Δh en la Tabla 2 y comparar caudales (% de error).',
@@ -426,7 +455,7 @@ function drawPanel() {
   txt('Fila Tabla 1:', X, y + 30, 22, '#b9c4d8'); txt(S.rows[S.sel] + ' ml', X + 150, y + 30, 26, '#fff', true);
   btn('sel-', X + 250, y + 2, 60, 42, '◀'); btn('sel+', X + 318, y + 2, 60, 42, '▶');
   btn('del', X + 390, y + 2, 170, 42, 'Borrar último'); y += 52;
-  btn('save', X, y, 270, 46, 'Guardar tiempo', { acc: true }); btn('auto', X + 280, y, 280, 46, 'Auto 5 tiempos'); y += 56;
+  btn('save', X, y, 270, 46, 'Guardar tiempo', { acc: true }); btn('auto', X + 280, y, 280, 46, 'Auto ' + NREP + ' tiempos'); y += 56;
   btn('dh', X, y, 270, 46, 'Registrar Δh', { acc: true }); btn('empty', X + 280, y, 280, 46, 'Vaciar probeta'); y += 56;
   btn('refill', X, y, 270, 46, 'Rellenar frasco'); btn('speed', X + 280, y, 280, 46, 'Velocidad ×' + S.speed); y += 56;
   btn('tup', X, y, 130, 42, 'Mesa ↑', { fs: 21 }); btn('tdn', X + 140, y, 130, 42, 'Mesa ↓', { fs: 21 });
@@ -465,8 +494,8 @@ function wrap(s, x, y, maxW, fs, col, lh) {
 }
 function drawTable1(R, x, y, CW) {
   txt('Tabla N°1 · Caudal usando volumen y tiempo', x, y, 24, '#fff', true); y += 14;
-  const cols = ['V (ml)', 't1', 't2', 't3', 't4', 't5', 'tp (s)', 'Q (ml/s)'];
-  const cw = [120, 100, 100, 100, 100, 100, 130, 140];
+  const cols = ['V (ml)', ...Array.from({ length: NREP }, (_, i) => 't' + (i + 1) + ' (s)'), 'tp (s)', 'Q (ml/s)'];
+  const cw = [150, ...Array.from({ length: NREP }, () => 190), 190, 190];
   let xx = x; y += 34;
   cols.forEach((c, i) => { txt(c, xx + 8, y, 21, '#9fb0cc', true); xx += cw[i]; });
   y += 14;
@@ -475,7 +504,7 @@ function drawTable1(R, x, y, CW) {
     buttons.push({ id: 'row' + ri, x, y, w: cw.reduce((a, b) => a + b), h: 58 });
     ctx.fillStyle = sel ? '#24406e' : (ri % 2 ? '#161d2b' : '#1b2334'); ctx.fillRect(x, y, cw.reduce((a, b) => a + b), 58);
     let xx = x; const ts = S.times[V];
-    const cells = [String(V) + (S.assisted[V] ? '*' : ''), ...[0, 1, 2, 3, 4].map(i => ts[i] != null ? ts[i].toFixed(2) : ''), f(R.r1[V].tp), f(R.r1[V].Q)];
+    const cells = [String(V) + (S.assisted[V] ? '*' : ''), ...Array.from({ length: NREP }, (_, i) => i).map(i => ts[i] != null ? ts[i].toFixed(2) : ''), f(R.r1[V].tp), f(R.r1[V].Q)];
     cells.forEach((c, i) => { txt(c, xx + 8, y + 38, 23, i === 0 ? '#fff' : '#e8ecf4', i === 0); xx += cw[i]; });
     y += 62;
   });
@@ -483,7 +512,7 @@ function drawTable1(R, x, y, CW) {
   txt('Qp = ' + f(R.Qp1) + ' ×10⁻⁶ m³/s', x, y, 28, '#ffd479', true); y += 40;
   txt('1 ml = 10⁻⁶ m³ → Q en ml/s = Q en 10⁻⁶ m³/s.   Q = V / tp', x, y, 20, '#9fb0cc'); y += 30;
   txt('Seleccione la fila (toque) y mida desde la marca de 100 ml (evita el golpe de ariete).', x, y, 20, '#9fb0cc'); y += 28;
-  if (Object.keys(S.assisted).length) txt('* fila con tiempos generados por "Auto 5 tiempos" (asistido).', x, y, 20, '#c9a3ff');
+  if (Object.keys(S.assisted).length) txt('* fila con tiempos generados por "Auto ' + NREP + ' tiempos" (asistido).', x, y, 20, '#c9a3ff');
 }
 function drawTable2(R, x, y, CW) {
   txt('Tabla N°2 · Caudal usando el manómetro', x, y, 24, '#fff', true); y += 46;
@@ -608,18 +637,18 @@ function act(id) {
     case 'save': {
       const V = S.rows[S.sel];
       if (S.sw.t <= 0) { toast('El cronómetro está en cero.'); break; }
-      if (S.times[V].length >= 5) { toast('La fila ' + V + ' ml ya tiene 5 tiempos.'); break; }
+      if (S.times[V].length >= NREP) { toast('La fila ' + V + ' ml ya tiene ' + NREP + ' tiempos.'); break; }
       S.sw.run = false; S.times[V].push(S.sw.t); S.condT1 = { out: S.outlet, h: S.h };
       toast(`t${S.times[V].length} = ${S.sw.t.toFixed(2)} s guardado en ${V} ml`);
-      S.sw.t = 0; if (S.times[V].length >= 5) S.sel = Math.min(3, S.sel + 1);
+      S.sw.t = 0; if (S.times[V].length >= NREP) S.sel = Math.min(3, S.sel + 1);
       break;
     }
     case 'del': { const V = S.rows[S.sel]; S.times[V].pop(); delete S.assisted[V]; break; }
     case 'auto': {
       const Q = Qss() * 1e6; const V = S.rows[S.sel];
       if (Q <= 0.05) { toast('No hay flujo: abra la llave del frasco y la válvula de salida.'); break; }
-      S.times[V] = Array.from({ length: 5 }, () => V / Q + gauss() * 0.18 + 0.05);
-      S.assisted[V] = true; S.condT1 = { out: S.outlet, h: S.h }; toast('5 tiempos simulados para ' + V + ' ml (±0,2 s de reacción).');
+      S.times[V] = Array.from({ length: NREP }, () => V / Q + gauss() * 0.18 + 0.05);
+      S.assisted[V] = true; S.condT1 = { out: S.outlet, h: S.h }; toast(NREP + ' tiempos simulados para ' + V + ' ml (±0,2 s de reacción).');
       S.sel = Math.min(3, S.sel + 1); break;
     }
     case 'dh': {
@@ -673,8 +702,8 @@ function checkSteps() {
   if (st[2] && S.feedOpen && S.bottleLevel > S.h - (BOTTLE_Y0 - AXIS_Y)) st[3] = true;
   if (st[2] && S.manOpen && S.outlet === 0 && S.fill >= 1 && Math.abs(S.dhv) < 2e-4) st[4] = true;
   if (st[4] && !S.manOpen) st[5] = true;
-  if (S.times[100].length >= 5) st[6] = true;
-  if (S.times[200].length >= 5 && S.times[300].length >= 5 && S.times[400].length >= 5) st[7] = true;
+  if (S.times[100].length >= NREP) st[6] = true;
+  if (S.times[200].length >= NREP && S.times[300].length >= NREP && S.times[400].length >= NREP) st[7] = true;
   if (S.dhRec != null) st[8] = true;
   if (S.dhRec != null && r.err != null) st[9] = true;
 }
@@ -881,6 +910,7 @@ renderer.setAnimationLoop(() => {
   updateVisuals(sdt);
   if (renderer.xr.isPresenting) updateControllers();
   updateButtons(dt);
+  updateValveLabels();
   acc += dt; swAcc += dt;
   const live = S.sw.run || S.tab === 4 || (S.tab === 0) || Math.abs(S.dh) > 1e-5;
   if (dirty || (live && acc > 0.1)) { drawPanel(); dirty = false; acc = 0; }
