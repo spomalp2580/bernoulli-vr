@@ -52,7 +52,8 @@ const A1 = Math.PI * D1 * D1 / 4, A2 = Math.PI * D2 * D2 / 4;
 const CD = 0.97;                                // coef. de descarga real del Venturi
 const KV = 1.35e-5;                             // constante de la válvula (m^3/s / sqrt(m))
 const BOTTLE_R = 0.08, BOTTLE_H = 0.30;         // frasco de Mariotte (m)
-const PROB_R = 0.0252;                          // radio interior probeta (500 ml = 0.25 m)
+const PROB_H = 0.42;                            // altura de la escala 0-500 ml (m)
+const PROB_R = Math.sqrt(500e-6 / (Math.PI * PROB_H)); // radio interior coherente con la escala                          // radio interior probeta (500 ml = 0.25 m)
 const PROB_CAP = 520;                           // ml antes de rebalsar
 const NREP = 2;                                 // repeticiones de tiempo por volumen
 
@@ -63,7 +64,8 @@ const X_CONT0 = 0.0, X_CONT1 = 0.03;
 const RV1 = 0.010, RV2 = 0.0045;   // radios visuales (vista ampliada)
 const BOTTLE_X = -0.40, BOTTLE_Y0 = 0.62;
 const MAN_XL = -0.10, MAN_XR = 0.10, MAN_BOT = 0.10, MAN_REST = 0.20, MAN_TOP = 0.36;
-const PROB_X = 0.33, PROB_Y0 = 0.015;
+const PROB_X = 0.325, PROB_Y0 = 0.015;
+const LIFT = 0.17;           // base que eleva el equipo sobre la mesa (la probeta queda en la mesa)
 const TABLE_H = 0.78;
 
 // ---------------------------------------------------------------- estado
@@ -132,7 +134,10 @@ for (const [x, z] of [[-0.6, -0.26], [0.6, -0.26], [-0.6, 0.26], [0.6, 0.26]]) {
   const l = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, TABLE_H - 0.04), legM);
   l.position.set(x, (TABLE_H - 0.04) / 2, z); tableGrp.add(l);
 }
-const app = new THREE.Group(); app.position.y = TABLE_H; bench.add(app);
+const app = new THREE.Group(); app.position.y = TABLE_H + LIFT; bench.add(app);
+const deck = new THREE.Group(); deck.position.y = TABLE_H; bench.add(deck); // objetos apoyados en la mesa
+const pedestal = new THREE.Mesh(new THREE.BoxGeometry(0.78, LIFT, 0.26), new THREE.MeshStandardMaterial({ color: 0x23262d, roughness: 0.75 }));
+pedestal.position.set(-0.13, LIFT / 2, -0.03); deck.add(pedestal);
 
 // materiales
 const glass = new THREE.MeshPhysicalMaterial({ color: 0xddeeff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0, depthWrite: false, side: THREE.DoubleSide });
@@ -262,30 +267,41 @@ for (const [x, flip] of [[MAN_XL + 0.016, false], [MAN_XR - 0.016, true]]) {
   p.position.set(x, 0.23, 0.012); if (flip) p.scale.x = -1; manG.add(p);
 }
 
-// ---------- Probeta graduada 500 ml
-const probG = new THREE.Group(); probG.position.set(PROB_X, 0, 0.0); app.add(probG);
-const pBase = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.015, 6), new THREE.MeshStandardMaterial({ color: 0x5d8fd8 }));
+// ---------- Probeta graduada 500 ml (apoyada en la mesa, escala grande)
+const probG = new THREE.Group(); probG.position.set(PROB_X, -LIFT, 0.0); app.add(probG);
+const pBase = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.056, 0.015, 6), new THREE.MeshStandardMaterial({ color: 0x5d8fd8 }));
 pBase.position.y = 0.0075; probG.add(pBase);
-probG.add(cylY(PROB_R + 0.002, PROB_Y0, 0.30, 0, 0, glass, 32));
-const probWater = new THREE.Mesh(new THREE.CylinderGeometry(PROB_R, PROB_R, 1, 32), waterM); probG.add(probWater);
+const PROB_TOP = PROB_Y0 + PROB_H + 0.035;
+probG.add(cylY(PROB_R + 0.0025, PROB_Y0, PROB_TOP, 0, 0, glass, 32));
+const lip = new THREE.Mesh(new THREE.TorusGeometry(PROB_R + 0.0035, 0.002, 8, 32), glass); lip.rotation.x = Math.PI / 2; lip.position.y = PROB_TOP; probG.add(lip);
+const probWaterM = new THREE.MeshStandardMaterial({ color: 0x1e7bff, transparent: true, opacity: 0.85, roughness: 0.2, emissive: 0x0a3f99, emissiveIntensity: 0.6 });
+const probWater = new THREE.Mesh(new THREE.CylinderGeometry(PROB_R, PROB_R, 1, 32), probWaterM); probG.add(probWater);
+const meniscus = new THREE.Mesh(new THREE.TorusGeometry(PROB_R - 0.0008, 0.0012, 8, 40), new THREE.MeshBasicMaterial({ color: 0xbfe6ff }));
+meniscus.rotation.x = Math.PI / 2; probG.add(meniscus);
 function probTexture() {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 2048; const x = c.getContext('2d');
-  x.clearRect(0, 0, 128, 2048); x.fillStyle = '#ffffff'; x.font = 'bold 30px sans-serif';
+  const W = 320, H = 4096; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  x.clearRect(0, 0, W, H);
+  x.fillStyle = 'rgba(10,14,22,0.6)'; x.fillRect(150, 0, W - 150, H); // franja oscura solo detrás de los números
+  x.textBaseline = 'middle';
   for (let ml = 0; ml <= 500; ml += 5) {
-    const y = 2048 - ml / 500 * 2048; const L = ml % 50 === 0 ? 70 : (ml % 10 === 0 ? 42 : 22);
-    x.fillRect(0, y - 2, L, 4);
-    if (ml % 50 === 0 && ml > 0) x.fillText(String(ml), 74, y + 11);
+    const y = H - ml / 500 * (H - 40) - 20;
+    const big = ml % 50 === 0, mid = ml % 10 === 0;
+    const L = big ? 150 : (mid ? 100 : 55);
+    x.fillStyle = big ? '#ffd23f' : '#ffffff'; x.fillRect(0, y - (big ? 5 : 3), L, big ? 10 : 6);
+    if (big && ml > 0) { x.font = 'bold 92px sans-serif'; x.fillStyle = '#ffd23f'; x.fillText(String(ml), 160, y); }
+    else if (mid && ml > 0) { x.font = 'bold 46px sans-serif'; x.fillStyle = '#ffffff'; x.fillText(String(ml), 108, y); }
   }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t;
 }
-const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.25), new THREE.MeshBasicMaterial({ map: probTexture(), transparent: true, depthWrite: false }));
-pg.position.set(-0.004, PROB_Y0 + 0.125, PROB_R + 0.003); probG.add(pg);
+const scaleH = PROB_H * 4096 / (4096 - 40);
+const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.06, scaleH), new THREE.MeshBasicMaterial({ map: probTexture(), transparent: true, depthWrite: false }));
+pg.position.set(0.03 - PROB_R * 0.6, PROB_Y0 + PROB_H / 2, PROB_R + 0.004); probG.add(pg);
 const stream = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 10), waterM); app.add(stream);
 
 // ---------- botonera física sobre la mesa (cronómetro y salir)
 const tableButtons = [];
 function pushButton(id, x, z, color, text, w = 0.12) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); app.add(g);
+  const g = new THREE.Group(); g.position.set(x, 0, z); deck.add(g);
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.038, 0.022, 32), new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.6 }));
   base.position.y = 0.011; g.add(base);
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.018, 32), new THREE.MeshStandardMaterial({ color, roughness: 0.35, emissive: color, emissiveIntensity: 0.15 }));
@@ -299,8 +315,8 @@ pushButton('swstart', 0.10, 0.17, 0x22b14c, 'INICIAR');
 pushButton('swstop', 0.22, 0.17, 0xe0261b, 'DETENER');
 pushButton('exit', -0.42, 0.20, 0xf08c1a, 'SALIR');
 const consoleBox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.008, 0.14), new THREE.MeshStandardMaterial({ color: 0x3b4352, roughness: 0.7 }));
-consoleBox.position.set(0.16, 0.004, 0.19); app.add(consoleBox);
-label('Cronómetro', 0.16, 0.012, 0.115, 0.1).rotation.x = -Math.PI / 2.6;
+consoleBox.position.set(0.16, 0.004, 0.19); deck.add(consoleBox);
+label('Cronómetro', 0.16, 0.012, 0.115, 0.1, deck).rotation.x = -Math.PI / 2.6;
 
 // ---------- partículas de flujo
 const NP = 140;
@@ -324,7 +340,7 @@ label('Medidor de Venturi', 0.02, 0.475, 0.03);
 label('Sección mayor (A1)', -0.12, AXIS_Y + 0.035, 0.03, 0.12);
 label('Sección menor (A2)', 0.12, AXIS_Y + 0.035, 0.03, 0.12);
 label('Manómetro de Hg', 0.0, 0.055, 0.04, 0.13);
-label('Probeta 500 ml', PROB_X + 0.02, 0.33 - 0.02, 0.07, 0.11);
+label('Probeta 500 ml', PROB_X + 0.04, PROB_TOP - LIFT + 0.03, 0.05, 0.11);
 // etiquetas de estado de las válvulas (ABIERTA / CERRADA)
 function stateLabel(x, y, z, w, parent) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const k = c.getContext('2d');
@@ -357,7 +373,7 @@ updateValveLabels();
 const swLabelCanvas = document.createElement('canvas'); swLabelCanvas.width = 512; swLabelCanvas.height = 160;
 const swTex = new THREE.CanvasTexture(swLabelCanvas); swTex.colorSpace = THREE.SRGBColorSpace;
 const swMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.047), new THREE.MeshBasicMaterial({ map: swTex, transparent: true }));
-swMesh.position.set(PROB_X + 0.13, 0.20, 0.05); swMesh.rotation.y = -0.35; app.add(swMesh);
+swMesh.position.set(PROB_X + 0.16, 0.12, 0.05); swMesh.rotation.y = -0.35; app.add(swMesh);
 function drawSwLabel() {
   const k = swLabelCanvas.getContext('2d'); k.clearRect(0, 0, 512, 160);
   k.fillStyle = S.sw.run ? 'rgba(20,90,40,0.9)' : 'rgba(15,20,30,0.85)'; roundRect(k, 0, 0, 512, 160, 26); k.fill();
@@ -370,7 +386,7 @@ const PW = 1600, PH = 900;
 const pc = document.createElement('canvas'); pc.width = PW; pc.height = PH; const ctx = pc.getContext('2d');
 const pTex = new THREE.CanvasTexture(pc); pTex.colorSpace = THREE.SRGBColorSpace; pTex.anisotropy = 8;
 const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4 * PH / PW), new THREE.MeshBasicMaterial({ map: pTex, transparent: true }));
-panel.position.set(0.86, 1.32, -0.48); panel.rotation.y = -0.72; scene.add(panel);
+panel.position.set(0.98, 1.34, -0.46); panel.rotation.y = -0.72; scene.add(panel);
 let buttons = [], dirty = true, hover = null;
 
 function roundRect(k, x, y, w, h, r) { k.beginPath(); k.moveTo(x + r, y); k.arcTo(x + w, y, x + w, y + h, r); k.arcTo(x + w, y + h, x, y + h, r); k.arcTo(x, y + h, x, y, r); k.arcTo(x, y, x + w, y, r); k.closePath(); }
@@ -747,10 +763,11 @@ function updateVisuals(dt) {
   // probeta
   const ph = Math.max(0.0003, S.probV * 1e-6 / (Math.PI * PROB_R * PROB_R));
   probWater.scale.y = ph; probWater.position.y = PROB_Y0 + ph / 2; probWater.visible = S.probV > 0.2;
+  meniscus.position.y = PROB_Y0 + ph; meniscus.visible = probWater.visible;
   // chorro
   const Qml = S.Q * 1e6;
   if (Qml > 0.05) {
-    const surf = PROB_Y0 + ph; const r = 0.0012 + Math.sqrt(Qml) * 0.0006;
+    const surf = PROB_Y0 + ph - LIFT; const r = 0.0012 + Math.sqrt(Qml) * 0.0006;
     stream.visible = true; stream.scale.set(r, SPOUT_Y - surf, r); stream.position.set(SPOUT_X, (SPOUT_Y + surf) / 2, 0);
   } else stream.visible = false;
   // partículas
@@ -918,7 +935,7 @@ renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
 });
 drawPanel(); drawSwLabel();
-window.__S = S; window.__act = act; // depuración
+window.__S = S; window.__act = act; window.__orbit = orbit; window.__applyOrbit = applyOrbit; // depuración
 })();
 
 </script>
