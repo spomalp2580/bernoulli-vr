@@ -281,6 +281,26 @@ const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.25), new THREE.MeshBa
 pg.position.set(-0.004, PROB_Y0 + 0.125, PROB_R + 0.003); probG.add(pg);
 const stream = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 10), waterM); app.add(stream);
 
+// ---------- botonera física sobre la mesa (cronómetro y salir)
+const tableButtons = [];
+function pushButton(id, x, z, color, text, w = 0.12) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); app.add(g);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.038, 0.022, 32), new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.6 }));
+  base.position.y = 0.011; g.add(base);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.018, 32), new THREE.MeshStandardMaterial({ color, roughness: 0.35, emissive: color, emissiveIntensity: 0.15 }));
+  cap.position.y = 0.03; g.add(cap);
+  const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.06, 12), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.y = 0.03; g.add(hit);
+  const lb = label(text, 0, 0.004, 0.06, w, g, 50); lb.rotation.x = -Math.PI / 2.6; lb.position.y = 0.012;
+  const b = { id, g, cap, hit, press: 0, touching: false }; tableButtons.push(b); return b;
+}
+pushButton('swstart', 0.10, 0.17, 0x22b14c, 'INICIAR');
+pushButton('swstop', 0.22, 0.17, 0xe0261b, 'DETENER');
+pushButton('exit', -0.42, 0.20, 0xf08c1a, 'SALIR');
+const consoleBox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.008, 0.14), new THREE.MeshStandardMaterial({ color: 0x3b4352, roughness: 0.7 }));
+consoleBox.position.set(0.16, 0.004, 0.19); app.add(consoleBox);
+label('Cronómetro', 0.16, 0.012, 0.115, 0.1).rotation.x = -Math.PI / 2.6;
+
 // ---------- partículas de flujo
 const NP = 140;
 const parts = new THREE.InstancedMesh(new THREE.SphereGeometry(0.0018, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), NP);
@@ -576,6 +596,12 @@ function act(id) {
     case 'cal1': S.measuredD1 = true; S.caliperMsg = 'D mayor = 7,90 ± 0,02 mm'; break;
     case 'cal2': S.measuredD2 = true; S.caliperMsg = 'D menor = 2,60 ± 0,02 mm'; break;
     case 'sw': S.sw.run = !S.sw.run; break;
+    case 'swstart': if (!S.sw.run) { S.sw.run = true; } pressAnim('swstart'); break;
+    case 'swstop': S.sw.run = false; pressAnim('swstop'); break;
+    case 'exit':
+      pressAnim('exit');
+      if (current) current.end(); else toast('El botón SALIR cierra la sesión de realidad virtual.');
+      break;
     case 'swr': S.sw.run = false; S.sw.t = 0; break;
     case 'sel-': S.sel = (S.sel + 3) % 4; break;
     case 'sel+': S.sel = (S.sel + 1) % 4; break;
@@ -615,6 +641,7 @@ function act(id) {
       dhRec: null, condRec: null, condT1: {}, steps: new Array(10).fill(false), step5seen: false, tab: 0 }); break;
   }
 }
+function pressAnim(id) { const b = tableButtons.find(b => b.id === id); if (b) b.press = 0.25; }
 function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283 * v); }
 
 // ---------------------------------------------------------------- simulación
@@ -715,7 +742,8 @@ function updateVisuals(dt) {
 const ray = new THREE.Raycaster();
 const interactive = [
   { obj: feedHit, id: 'feed' }, { obj: outletHit, id: 'outcycle' },
-  { obj: manValves[0].userData.hit, id: 'man' }, { obj: manValves[1].userData.hit, id: 'man' }];
+  { obj: manValves[0].userData.hit, id: 'man' }, { obj: manValves[1].userData.hit, id: 'man' },
+  ...tableButtons.map(b => ({ obj: b.hit, id: b.id }))];
 function pick(origin, dir) {
   ray.set(origin, dir); ray.far = 6;
   const objs = [panel, ...interactive.map(i => i.obj)];
@@ -732,7 +760,7 @@ function pick(origin, dir) {
 }
 
 // controladores XR (mandos o manos con gesto de pinza)
-const ctrls = [];
+const ctrls = [], hands = [];
 for (let i = 0; i < 2; i++) {
   const c = renderer.xr.getController(i);
   const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
@@ -743,6 +771,7 @@ for (let i = 0; i < 2; i++) {
   c.userData = { line, dot };
   c.addEventListener('selectstart', () => { const r = c.userData.last; if (r && r.id) act(r.id); });
   scene.add(c); ctrls.push(c);
+  const hand = renderer.xr.getHand(i); scene.add(hand); hands.push(hand);
   const grip = renderer.xr.getControllerGrip(i);
   const gm = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0x333a46 }));
   gm.rotation.x = Math.PI / 2; gm.position.z = 0.03;
@@ -761,6 +790,24 @@ function updateControllers() {
     else { c.userData.dot.visible = false; c.userData.line.scale.z = 2; }
   }
   if (newHover !== hover) { hover = newHover; dirty = true; }
+  // pulsar los botones de la mesa tocándolos con el mando o la mano
+  const wp = new THREE.Vector3();
+  for (const b of tableButtons) {
+    b.cap.getWorldPosition(wp);
+    let near = false;
+    for (const c of ctrls) { if (!c.visible) continue; o.setFromMatrixPosition(c.matrixWorld); if (o.distanceTo(wp) < 0.045) near = true; }
+    for (const h of hands) { const tip = h.joints && h.joints['index-finger-tip']; if (tip && tip.visible) { tip.getWorldPosition(o); if (o.distanceTo(wp) < 0.035) near = true; } }
+    if (near && !b.touching) act(b.id);
+    b.touching = near;
+  }
+}
+function updateButtons(dt) {
+  for (const b of tableButtons) {
+    b.press = Math.max(0, b.press - dt);
+    b.cap.position.y = 0.03 - (b.press > 0 ? 0.008 : 0);
+    const lit = (b.id === 'swstart' && S.sw.run) || (b.id === 'swstop' && !S.sw.run && S.sw.t > 0);
+    b.cap.material.emissiveIntensity = lit ? 0.7 : (hover === b.id ? 0.45 : 0.15);
+  }
 }
 
 // ratón (modo escritorio) + órbita simple
@@ -833,6 +880,7 @@ renderer.setAnimationLoop(() => {
   if (S.toastT > 0) { S.toastT -= dt; if (S.toastT <= 0) dirty = true; }
   updateVisuals(sdt);
   if (renderer.xr.isPresenting) updateControllers();
+  updateButtons(dt);
   acc += dt; swAcc += dt;
   const live = S.sw.run || S.tab === 4 || (S.tab === 0) || Math.abs(S.dh) > 1e-5;
   if (dirty || (live && acc > 0.1)) { drawPanel(); dirty = false; acc = 0; }
