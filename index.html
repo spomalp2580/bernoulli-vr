@@ -466,8 +466,8 @@ const logoBoard = (function () {
   k.textAlign = 'center'; k.fillStyle = '#AEB9E6'; k.font = `600 54px ${FB}`; k.fillText('LABORATORIOS VIRTUALES INTERACTIVOS', 695, 590);
   k.fillStyle = NF.cian; k.font = `italic 700 50px ${FT}`; k.fillText('Experimenta la física. Vive la ciencia.', 695, 670);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const W = 1.05, m = new THREE.Mesh(new THREE.PlaneGeometry(W, W * 750 / 1390), new THREE.MeshBasicMaterial({ map: t }));
-  m.position.set(-0.1, 2.22, -1.6); scene.add(m);
+  const W = 0.8, m = new THREE.Mesh(new THREE.PlaneGeometry(W, W * 750 / 1390), new THREE.MeshBasicMaterial({ map: t }));
+  m.position.set(0.15, 2.05, -2.37); scene.add(m);
   // logotipo oficial incrustado
   const img = new Image();
   img.onload = () => { const tx = new THREE.Texture(img); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; tx.needsUpdate = true; m.material.map = tx; m.material.needsUpdate = true; };
