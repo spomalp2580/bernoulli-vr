@@ -2,31 +2,74 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-  <script src="https://spomalp2580.github.io/guardia.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulador VR · Teorema de Bernoulli (Venturi)</title>
-<meta name="theme-color" content="#1d2330">
+<title>NovaFísica VR · Teorema de Bernoulli</title>
+<meta name="theme-color" content="#020628">
+<link rel="icon" type="image/png" href="novafisica-icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,600;0,700;0,800;1,700;1,800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#1d2330;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#e8ecf4}
+  :root{--cian:#00D4FD;--azul:#3F8BFB;--violeta:#8B36F9;--noche:#020628;--niebla:#EEF2FF}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--noche);font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#E8ECFF}
   canvas{display:block;touch-action:none}
-  #xr{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;z-index:5;max-width:92vw}
-  #xr .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-  #xr button{font:600 18px system-ui,sans-serif;padding:14px 26px;border-radius:12px;border:0;background:#2f6fd0;color:#fff;cursor:pointer;min-width:200px}
-  #xr button#bar{background:#2e8b57}
-  #xr button:disabled,#xr button#bar:disabled{background:#4a5266;color:#aab;cursor:not-allowed}
-  #msg{font-size:14px;background:rgba(10,14,22,.8);padding:8px 14px;border-radius:8px;text-align:center;max-width:640px}
+  .nf-word{font-family:"Exo 2",sans-serif;font-weight:800;font-style:italic;letter-spacing:.5px}
+  .nf-word b{font-weight:800;background:linear-gradient(90deg,var(--cian),var(--violeta));-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* portada */
+  #xr{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;box-sizing:border-box;
+      background:radial-gradient(ellipse at 50% 35%,rgba(63,139,251,.18),transparent 60%),radial-gradient(ellipse at 80% 90%,rgba(139,54,249,.18),transparent 55%),var(--noche);text-align:center}
+  #logo{width:min(520px,80vw);height:auto;display:block}
+  #wm{font-size:clamp(56px,10vw,110px);line-height:1}
+  #wm::after{content:"";display:block;height:6px;margin:6px auto 0;width:80%;border-radius:50%;background:linear-gradient(90deg,transparent,var(--cian),transparent)}
+  .tag{display:inline-block;border:2px solid var(--violeta);color:#C9A8FF;border-radius:999px;padding:6px 16px;font:700 14px "Exo 2",sans-serif;letter-spacing:1.5px}
+  h1{font:700 clamp(24px,3.2vw,38px) "Exo 2",sans-serif;margin:4px 0 0;color:#fff}
+  .sub{color:#AEB9E6;margin:0;font-size:16px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  #xr button{font:700 18px "Exo 2",sans-serif;padding:15px 28px;border-radius:14px;border:0;cursor:pointer;min-width:230px;color:#fff;background:var(--azul);box-shadow:0 6px 24px rgba(63,139,251,.35)}
+  #xr button#bar{background:var(--violeta);box-shadow:0 6px 24px rgba(139,54,249,.35)}
+  #xr button#b3d{background:transparent;border:2px solid var(--cian);color:var(--cian);box-shadow:none}
+  #xr button:hover:not(:disabled){filter:brightness(1.12)}
+  #xr button:disabled,#xr button#bar:disabled{background:#1E2C6E;color:#7E8BBE;cursor:not-allowed;box-shadow:none}
+  #msg{font-size:14px;color:#AEB9E6;max-width:640px}
   #msg:empty{display:none}
-  #help{position:fixed;top:12px;left:12px;font-size:13px;background:rgba(10,14,22,.75);padding:10px 14px;border-radius:10px;line-height:1.45;max-width:340px}
+  .slogan{font:italic 700 18px "Exo 2",sans-serif;color:var(--cian);margin:6px 0 0}
+  /* barra en modo 3D de escritorio */
+  #top{position:fixed;top:0;left:0;right:0;height:56px;display:none;align-items:center;gap:14px;padding:0 16px;background:var(--noche);border-bottom:3px solid;border-image:linear-gradient(90deg,var(--cian),var(--azul),var(--violeta)) 1;z-index:4}
+  #top img{height:40px;width:40px}
+  #top .nf-word{font-size:24px}
+  #top .nf-word b{background:none;color:var(--cian)}
+  #top .t{margin-left:auto;font:700 16px "Exo 2",sans-serif;color:#fff}
+  #top button{font:700 14px "Exo 2",sans-serif;background:var(--azul);color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer}
+  #help{position:fixed;top:68px;left:12px;font-size:13px;background:rgba(2,6,40,.85);border:1px solid #1E2C6E;padding:10px 14px;border-radius:10px;line-height:1.45;max-width:330px;display:none;z-index:4}
 </style>
 </head>
 <body>
-<div id="help"><b>Simulador VR · Teorema de Bernoulli</b><br>
-Escritorio: arrastre para girar · clic derecho/Shift para desplazar · rueda para acercar · clic en el panel y en las válvulas.<br>
-Quest 3: apunte con el mando (o la mano) y pulse el gatillo (o pellizque).</div>
 <div id="xr">
-  <div class="row"><button id="bvr" disabled>Entrar en VR</button><button id="bar" disabled>Realidad mixta (passthrough)</button></div>
+  <img id="logo" src="novafisica-logo.png" alt="NovaFísica" onerror="this.remove();document.getElementById('wm').hidden=false">
+  <div id="wm" class="nf-word" hidden>Nova<b>Física</b></div>
+  <span class="tag">NOVAFÍSICA VR · LAB · HIDRODINÁMICA</span>
+  <h1>Mecánica de fluidos · Teorema de Bernoulli</h1>
+  <p class="sub">Medidor de Venturi: caudal por volumen y tiempo y por el manómetro de mercurio</p>
+  <div class="row">
+    <button id="bvr" disabled>Entrar en VR</button>
+    <button id="bar" disabled>Realidad mixta</button>
+    <button id="b3d">Explorar en 3D</button>
+  </div>
   <div id="msg"></div>
+  <p class="slogan">Experimenta la física. Vive la ciencia.</p>
 </div>
+<div id="top">
+  <img src="novafisica-icono.png" alt="" onerror="this.remove()">
+  <span class="nf-word">Nova<b>Física</b></span>
+  <span class="tag" style="font-size:11px;padding:4px 10px">VR · LAB</span>
+  <span class="t">Teorema de Bernoulli</span>
+  <button id="bhome">Portada</button>
+</div>
+<div id="help"><b>Modo 3D</b><br>Arrastre para girar · clic derecho o Shift para desplazar · rueda para acercar · clic en el panel, las válvulas y los botones de la mesa.</div>
+<script>
+document.getElementById('b3d').onclick = () => { document.getElementById('xr').style.display = 'none'; document.getElementById('top').style.display = 'flex'; document.getElementById('help').style.display = 'block'; };
+document.getElementById('bhome').onclick = () => { document.getElementById('xr').style.display = ''; document.getElementById('top').style.display = 'none'; document.getElementById('help').style.display = 'none'; };
+</script>
 <script>
 console.warn('Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation'),
 /**
@@ -39,12 +82,23 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 </script>
 <script>
 // =====================================================================
-//  Simulador VR – Teorema de Bernoulli / Medidor de Venturi
-//  Práctica de laboratorio – Centro de Física UCE
+//  NovaFísica VR · Teorema de Bernoulli / Medidor de Venturi
+//  Laboratorios virtuales interactivos — Experimenta la física. Vive la ciencia.
 //  WebXR + three.js  (Meta Quest 3: VR y Realidad Mixta)
 // =====================================================================
-(function () {
+(async function () {
 'use strict';
+// ---------------------------------------------------------------- identidad NovaFísica
+const NF = {
+  cian: '#00D4FD', azul: '#3F8BFB', violeta: '#8B36F9', noche: '#020628', niebla: '#EEF2FF',
+  nocheSuave: '#0A1240', neutro: '#1E2C6E', peligro: '#D9364A', tinta: '#0B1440', texto: '#46527E',
+};
+const FT = '"Exo 2", "Segoe UI", sans-serif', FB = 'Inter, "Segoe UI", sans-serif';
+try {
+  await Promise.race([
+    Promise.all(['italic 800 40px "Exo 2"', '700 40px "Exo 2"', '400 20px Inter', '600 20px Inter', '700 20px Inter'].map(q => document.fonts.load(q))),
+    new Promise(r => setTimeout(r, 2500))]);
+} catch (e) { /* sin fuentes web: se usa la tipografía del sistema */ }
 
 // ---------------------------------------------------------------- constantes físicas
 const g = 9.81, RHO_W = 1000, RHO_HG = 13600;
@@ -79,7 +133,7 @@ const S = {
   rows: [100, 200, 300, 400], times: { 100: [], 200: [], 300: [], 400: [] }, assisted: {},
   sel: 0, dhRec: null, condRec: null, condT1: {},
   steps: new Array(10).fill(false), step5seen: false,
-  tab: 0, toast: '', toastT: 0, simT: 0, tableY: 0, tableZ: 0,
+  tab: 0, sub: 0, toast: '', toastT: 0, simT: 0, tableY: 0, tableZ: 0,
 };
 
 function heff() {
@@ -109,7 +163,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const BG = new THREE.Color(0x1d2330);
+const BG = new THREE.Color(NF.noche);
 scene.background = BG;
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.02, 50);
 camera.position.set(0.05, 1.55, 0.55);
@@ -119,25 +173,35 @@ const dl = new THREE.DirectionalLight(0xffffff, 1.6); dl.position.set(1, 3, 2); 
 
 // sala
 const room = new THREE.Group(); scene.add(room);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshStandardMaterial({ color: 0x3a4250, roughness: 0.95 }));
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ color: 0x07103f, roughness: 0.9 }));
 floor.rotation.x = -Math.PI / 2; room.add(floor);
-const grid = new THREE.GridHelper(12, 24, 0x56607a, 0x47506a); grid.position.y = 0.002; room.add(grid);
-const wall = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), new THREE.MeshStandardMaterial({ color: 0x2b3240 }));
-wall.position.set(0, 2, -2.2); room.add(wall);
+const grid = new THREE.GridHelper(14, 28, 0x00d4fd, 0x1d2f8a); grid.position.y = 0.002;
+grid.material.transparent = true; grid.material.opacity = 0.35; room.add(grid);
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 5), new THREE.MeshStandardMaterial({ color: 0x050b36 }));
+wall.position.set(0, 2.5, -2.4); room.add(wall);
+// franja luminosa cian → azul → violeta en la pared (como las órbitas del logotipo)
+(function () {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 8; const k = c.getContext('2d');
+  const gr = k.createLinearGradient(0, 0, 1024, 0); gr.addColorStop(0, '#00D4FD'); gr.addColorStop(0.5, '#3F8BFB'); gr.addColorStop(1, '#8B36F9');
+  k.fillStyle = gr; k.fillRect(0, 0, 1024, 8);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(14, 0.03), new THREE.MeshBasicMaterial({ map: t }));
+  m.position.set(0, 1.0, -2.39); room.add(m);
+})();
 
 // banco (mesa + equipo) – se puede subir/bajar
 const bench = new THREE.Group(); bench.position.set(0, 0, -0.62); scene.add(bench);
 const tableGrp = new THREE.Group(); bench.add(tableGrp);
-const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.04, 0.6), new THREE.MeshStandardMaterial({ color: 0xd8d4cc, roughness: 0.7 }));
+const top = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.04, 0.6), new THREE.MeshStandardMaterial({ color: 0xdfe4f5, roughness: 0.7 }));
 top.position.y = TABLE_H - 0.02; tableGrp.add(top);
-const legM = new THREE.MeshStandardMaterial({ color: 0x555b66, metalness: 0.5, roughness: 0.4 });
+const legM = new THREE.MeshStandardMaterial({ color: 0x1e2c6e, metalness: 0.5, roughness: 0.4 });
 for (const [x, z] of [[-0.6, -0.26], [0.6, -0.26], [-0.6, 0.26], [0.6, 0.26]]) {
   const l = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, TABLE_H - 0.04), legM);
   l.position.set(x, (TABLE_H - 0.04) / 2, z); tableGrp.add(l);
 }
 const app = new THREE.Group(); app.position.y = TABLE_H + LIFT; bench.add(app);
 const deck = new THREE.Group(); deck.position.y = TABLE_H; bench.add(deck); // objetos apoyados en la mesa
-const pedestal = new THREE.Mesh(new THREE.BoxGeometry(0.78, LIFT, 0.26), new THREE.MeshStandardMaterial({ color: 0x23262d, roughness: 0.75 }));
+const pedestal = new THREE.Mesh(new THREE.BoxGeometry(0.78, LIFT, 0.26), new THREE.MeshStandardMaterial({ color: 0x0a1240, roughness: 0.75 }));
 pedestal.position.set(-0.13, LIFT / 2, -0.03); deck.add(pedestal);
 
 // materiales
@@ -330,8 +394,9 @@ function areaRealAt(x) { if (x < X_CONT0) return A1; if (x > X_CONT1) return A2;
 // ---------- etiquetas 3D
 function label(text, x, y, z, w = 0.16, parent = app, size = 44) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 96; const k = c.getContext('2d');
-  k.fillStyle = 'rgba(15,20,30,0.78)'; roundRect(k, 0, 0, 512, 96, 22); k.fill();
-  k.fillStyle = '#fff'; k.font = `bold ${size}px sans-serif`; k.textAlign = 'center'; k.textBaseline = 'middle'; k.fillText(text, 256, 50);
+  k.fillStyle = 'rgba(2,6,40,0.9)'; roundRect(k, 0, 0, 512, 96, 22); k.fill();
+  k.strokeStyle = NF.cian; k.lineWidth = 3; roundRect(k, 2, 2, 508, 92, 20); k.stroke();
+  k.fillStyle = '#fff'; k.font = `600 ${size}px ${FB}`; k.textAlign = 'center'; k.textBaseline = 'middle'; k.fillText(text, 256, 50);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w * 96 / 512), new THREE.MeshBasicMaterial({ map: t, transparent: true }));
   m.position.set(x, y, z); parent.add(m); return m;
@@ -355,8 +420,8 @@ function stateLabel(x, y, z, w, parent) {
     k.fillStyle = open ? 'rgba(30,140,70,0.95)' : 'rgba(190,40,35,0.95)'; roundRect(k, 0, 0, 512, 128, 28); k.fill();
     k.strokeStyle = 'rgba(255,255,255,0.85)'; k.lineWidth = 5; roundRect(k, 4, 4, 504, 120, 25); k.stroke();
     k.fillStyle = '#fff'; k.textAlign = 'center'; k.textBaseline = 'middle';
-    k.font = 'bold 30px sans-serif'; k.fillText(title, 256, 34);
-    k.font = 'bold 54px sans-serif'; k.fillText((open ? 'ABIERTA' : 'CERRADA') + extra, 256, 86);
+    k.font = `600 30px ${FB}`; k.fillText(title, 256, 34);
+    k.font = `800 54px ${FT}`; k.fillText((open ? 'ABIERTA' : 'CERRADA') + extra, 256, 86);
     t.needsUpdate = true;
   };
 }
@@ -377,33 +442,69 @@ const swMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.047), new THREE.Me
 swMesh.position.set(PROB_X + 0.16, 0.12, 0.05); swMesh.rotation.y = -0.35; app.add(swMesh);
 function drawSwLabel() {
   const k = swLabelCanvas.getContext('2d'); k.clearRect(0, 0, 512, 160);
-  k.fillStyle = S.sw.run ? 'rgba(20,90,40,0.9)' : 'rgba(15,20,30,0.85)'; roundRect(k, 0, 0, 512, 160, 26); k.fill();
-  k.fillStyle = '#fff'; k.font = '28px sans-serif'; k.textAlign = 'center'; k.fillText('Cronómetro', 256, 40);
-  k.font = 'bold 82px monospace'; k.fillText(S.sw.t.toFixed(2) + ' s', 256, 128); swTex.needsUpdate = true;
+  k.fillStyle = 'rgba(2,6,40,0.94)'; roundRect(k, 0, 0, 512, 160, 26); k.fill();
+  k.strokeStyle = S.sw.run ? NF.cian : NF.violeta; k.lineWidth = 5; roundRect(k, 3, 3, 506, 154, 24); k.stroke();
+  k.fillStyle = '#AEB9E6'; k.font = `600 28px ${FB}`; k.textAlign = 'center'; k.fillText('Cronómetro', 256, 40);
+  k.fillStyle = S.sw.run ? NF.cian : '#fff'; k.font = `700 84px ${FT}`; k.fillText(S.sw.t.toFixed(2).replace('.', ',') + ' s', 256, 128); swTex.needsUpdate = true;
 }
 
-// ---------------------------------------------------------------- PANEL de control (canvas)
-const PW = 1600, PH = 900;
+
+// ---------- letrero NovaFísica en la escena (logotipo oficial o, si falta, la marca en texto)
+const logoBoard = (function () {
+  const c = document.createElement('canvas'); c.width = 1390; c.height = 750; const k = c.getContext('2d');
+  k.fillStyle = NF.noche; k.fillRect(0, 0, 1390, 750);
+  k.textAlign = 'center'; k.textBaseline = 'middle';
+  k.font = `italic 800 230px ${FT}`;
+  const wN = k.measureText('Nova').width, wF = k.measureText('Física').width, x0 = 695 - (wN + wF) / 2;
+  k.textAlign = 'left'; k.fillStyle = '#FFFFFF'; k.fillText('Nova', x0, 330);
+  const gr = k.createLinearGradient(x0 + wN, 0, x0 + wN + wF, 0); gr.addColorStop(0, NF.cian); gr.addColorStop(1, NF.violeta);
+  k.fillStyle = gr; k.fillText('Física', x0 + wN, 330);
+  k.strokeStyle = NF.cian; k.lineWidth = 10; k.beginPath(); k.ellipse(695, 470, (wN + wF) / 2, 26, 0, 0.1, Math.PI - 0.1); k.stroke();
+  k.textAlign = 'center'; k.fillStyle = '#AEB9E6'; k.font = `600 54px ${FB}`; k.fillText('LABORATORIOS VIRTUALES INTERACTIVOS', 695, 590);
+  k.fillStyle = NF.cian; k.font = `italic 700 50px ${FT}`; k.fillText('Experimenta la física. Vive la ciencia.', 695, 670);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const W = 1.05, m = new THREE.Mesh(new THREE.PlaneGeometry(W, W * 750 / 1390), new THREE.MeshBasicMaterial({ map: t }));
+  m.position.set(-0.1, 2.22, -1.6); scene.add(m);
+  if (/^https?:$/.test(location.protocol)) {
+    new THREE.TextureLoader().load('novafisica-logo.png', tx => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; m.material.map = tx; m.material.needsUpdate = true; });
+  }
+  return m;
+})();
+// ---------------------------------------------------------------- PANEL de control (canvas) · identidad NovaFísica
+const PW = 1800, PH = 1100;
 const pc = document.createElement('canvas'); pc.width = PW; pc.height = PH; const ctx = pc.getContext('2d');
 const pTex = new THREE.CanvasTexture(pc); pTex.colorSpace = THREE.SRGBColorSpace; pTex.anisotropy = 8;
-const panel = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4 * PH / PW), new THREE.MeshBasicMaterial({ map: pTex, transparent: true }));
-panel.position.set(0.98, 1.34, -0.46); panel.rotation.y = -0.72; scene.add(panel);
+const PANEL_W = 1.55;
+const panel = new THREE.Mesh(new THREE.PlaneGeometry(PANEL_W, PANEL_W * PH / PW), new THREE.MeshBasicMaterial({ map: pTex, transparent: true }));
+panel.position.set(1.02, 1.38, -0.44); panel.rotation.y = -0.72; scene.add(panel);
 let buttons = [], dirty = true, hover = null;
+
+// ícono oficial (se carga desde el mismo sitio; en file:// se omite para no contaminar el canvas)
+const ONLINE = /^https?:$/.test(location.protocol);
+const iconImg = new Image(); let iconOK = false;
+if (ONLINE) { iconImg.onload = () => { iconOK = true; dirty = true; }; iconImg.src = 'novafisica-icono.png'; }
 
 function roundRect(k, x, y, w, h, r) { k.beginPath(); k.moveTo(x + r, y); k.arcTo(x + w, y, x + w, y + h, r); k.arcTo(x + w, y + h, x, y + h, r); k.arcTo(x, y + h, x, y, r); k.arcTo(x, y, x + w, y, r); k.closePath(); }
 function btn(id, x, y, w, h, text, opt = {}) {
   buttons.push({ id, x, y, w, h });
   const hov = hover === id;
-  ctx.fillStyle = opt.on ? '#2e8b57' : (opt.danger ? '#a33a3a' : (opt.acc ? '#2f6fd0' : '#3a4458'));
-  if (hov) ctx.fillStyle = '#e0a526';
-  roundRect(ctx, x, y, w, h, 12); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = `bold ${opt.fs || 24}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  let bg = opt.on ? NF.violeta : (opt.danger ? NF.peligro : (opt.acc ? NF.azul : (opt.light ? '#FFFFFF' : NF.neutro)));
+  let fg = opt.light && !opt.on ? NF.tinta : '#FFFFFF';
+  if (hov) { bg = NF.cian; fg = NF.noche; }
+  ctx.fillStyle = bg; roundRect(ctx, x, y, w, h, opt.r || 12); ctx.fill();
+  if (opt.light && !opt.on && !hov) { ctx.strokeStyle = '#C9D3F5'; ctx.lineWidth = 2; roundRect(ctx, x + 1, y + 1, w - 2, h - 2, opt.r || 12); ctx.stroke(); }
+  ctx.fillStyle = fg; ctx.font = `${opt.title ? '700 ' : '600 '}${opt.fs || 24}px ${opt.title ? FT : FB}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(text, x + w / 2, y + h / 2 + 1); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
-function txt(s, x, y, fs = 24, col = '#e8ecf4', bold = false, align = 'left') {
-  ctx.font = `${bold ? 'bold ' : ''}${fs}px sans-serif`; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); ctx.textAlign = 'left';
+function txt(s, x, y, fs = 24, col = NF.tinta, bold = false, align = 'left', fam = FB) {
+  ctx.font = `${bold ? '700 ' : '400 '}${fs}px ${fam}`; ctx.fillStyle = col; ctx.textAlign = align; ctx.fillText(s, x, y); ctx.textAlign = 'left';
 }
-const f = (v, d = 2) => (v == null || isNaN(v)) ? '—' : v.toFixed(d);
+function wordmark(x, y, fs) { // «Nova» blanco + «Física» cian (Exo 2, 800, cursiva)
+  ctx.font = `italic 800 ${fs}px ${FT}`; ctx.fillStyle = '#FFFFFF'; ctx.fillText('Nova', x, y);
+  const w = ctx.measureText('Nova').width; ctx.fillStyle = NF.cian; ctx.fillText('Física', x + w, y);
+  return w + ctx.measureText('Física').width;
+}
+const f = (v, d = 2) => (v == null || isNaN(v)) ? '—' : v.toFixed(d).replace('.', ',');
 const mean = a => a.length ? a.reduce((p, c) => p + c, 0) / a.length : null;
 
 function results() {
@@ -427,209 +528,339 @@ function results() {
   return { r1, Qp1, t2, err };
 }
 
-const TABS = ['Procedimiento', 'Tabla 1', 'Tabla 2', 'Gráfica V=f(t)', 'Lupa'];
+const TABS = ['Objetivos', 'Equipo', 'Fundamento', 'Procedimiento', 'Registro de datos', 'Cuestionario'];
+const SUBS = ['Tabla N°1', 'Tabla N°2', 'Gráfica V = f(t)', 'Lupa'];
 const STEP_TXT = [
-  'Medir los diámetros de los tubos con el pie de rey.',
-  'Calcular el área de los tubos (Tabla 2).',
-  'Cerrar la válvula de salida y llenar de agua el Venturi (abrir llave del frasco).',
-  'Estabilizar el flujo: h constante con el frasco de Mariotte.',
-  'Con la salida cerrada, verificar que las ramas del manómetro estén niveladas.',
-  'Cerrar las dos válvulas del manómetro.',
-  'Abrir la salida. Medir 2 veces el tiempo para 100 ml (desde la marca de 100 ml).',
-  'Repetir para 200, 300 y 400 ml.',
-  'Abrir las válvulas del manómetro y medir la diferencia de alturas Δh.',
-  'Registrar Δh en la Tabla 2 y comparar caudales (% de error).',
+  'Medir el diámetro de los tubos del medidor de Venturi con el pie de rey.',
+  'Calcular el área de los tubos y registrarla (Tabla N°2).',
+  'Cerrar la válvula de salida y llenar de agua todo el medidor de Venturi (abrir la llave del frasco).',
+  'Estabilizar el flujo hasta mantener una altura h constante usando el frasco de Mariotte.',
+  'Con la salida cerrada, verificar que las ramas del manómetro de mercurio estén niveladas.',
+  'Cerrar las dos válvulas del manómetro para independizarlo de los tubos horizontales.',
+  'Con el cronómetro encerado, medir 2 veces el tiempo de llenado de 100 ml partiendo de la marca de 100 ml (evita el golpe de ariete).',
+  'Repetir el paso 7 para 200, 300 y 400 ml y registrar volumen y tiempo en la Tabla N°1.',
+  'Abrir las válvulas del manómetro y medir la diferencia de alturas Δh de sus ramas.',
+  'Registrar Δh en la Tabla N°2.',
 ];
+
+// ---- marco general
+function drawFrame() {
+  ctx.clearRect(0, 0, PW, PH);
+  ctx.fillStyle = NF.niebla; roundRect(ctx, 0, 0, PW, PH, 26); ctx.fill();
+  // encabezado noche
+  ctx.save(); roundRect(ctx, 0, 0, PW, PH, 26); ctx.clip();
+  ctx.fillStyle = NF.noche; ctx.fillRect(0, 0, PW, 96);
+  const gr = ctx.createLinearGradient(0, 0, PW, 0); gr.addColorStop(0, NF.cian); gr.addColorStop(0.5, NF.azul); gr.addColorStop(1, NF.violeta);
+  ctx.fillStyle = gr; ctx.fillRect(0, 92, PW, 5);
+  // columna de controles (noche suave)
+  ctx.fillStyle = NF.nocheSuave; ctx.fillRect(0, 97, 640, PH - 97 - 52);
+  // pie
+  ctx.fillStyle = NF.noche; ctx.fillRect(0, PH - 52, PW, 52);
+  ctx.restore();
+  let x = 26;
+  if (iconOK) { ctx.drawImage(iconImg, 18, 10, 76, 76); x = 104; }
+  const w = wordmark(x, 62, 44);
+  // etiqueta de módulo
+  const tag = 'VR · LAB · HIDRODINÁMICA'; ctx.font = `700 19px ${FT}`; const tw = ctx.measureText(tag).width + 30;
+  ctx.strokeStyle = NF.violeta; ctx.lineWidth = 2.5; roundRect(ctx, x + w + 22, 30, tw, 38, 19); ctx.stroke();
+  ctx.fillStyle = '#C9A8FF'; ctx.fillText(tag, x + w + 37, 56);
+  txt('Mecánica de fluidos · Teorema de Bernoulli', PW - 28, 52, 28, '#FFFFFF', true, 'right', FT);
+  txt('Medidor de Venturi', PW - 28, 80, 19, NF.cian, false, 'right', FB);
+  // pie de marca
+  txt('NovaFísica · Laboratorios virtuales interactivos · Web · 3D · Realidad Virtual', 26, PH - 19, 17, '#AEB9E6');
+  ctx.font = `italic 700 19px ${FT}`; ctx.fillStyle = NF.cian; ctx.textAlign = 'right';
+  ctx.fillText('Experimenta la física. Vive la ciencia.', PW - 26, PH - 18); ctx.textAlign = 'left';
+}
+
+// ---- columna de controles
+function drawControls() {
+  let y = 118; const X = 26, W = 588;
+  const L = '#AEB9E6';
+  const sect = t => { txt(t.toUpperCase(), X, y + 16, 16, NF.cian, true, 'left', FT); y += 26; };
+  const row = (label, val) => { txt(label, X, y + 30, 22, L); if (val) txt(val, X + 260, y + 30, 22, '#fff', true); };
+  sect('Equipo');
+  row('Llave del frasco', S.feedOpen ? 'ABIERTA' : 'CERRADA');
+  btn('feed', X + 448, y + 2, 140, 42, S.feedOpen ? 'Cerrar' : 'Abrir', { on: S.feedOpen, acc: !S.feedOpen }); y += 52;
+  row('Válvula de salida', S.outlet + ' %');
+  btn('out-', X + 398, y + 2, 90, 42, '−', { fs: 32 }); btn('out+', X + 498, y + 2, 90, 42, '+', { fs: 32 }); y += 52;
+  row('Válvulas manómetro', S.manOpen ? 'ABIERTAS' : 'CERRADAS');
+  btn('man', X + 448, y + 2, 140, 42, S.manOpen ? 'Cerrar' : 'Abrir', { on: S.manOpen, acc: !S.manOpen }); y += 52;
+  row('Altura h (Mariotte)', f(S.h * 100, 1) + ' cm');
+  btn('h-', X + 398, y + 2, 90, 42, '−', { fs: 32 }); btn('h+', X + 498, y + 2, 90, 42, '+', { fs: 32 }); y += 56;
+  txt('Pie de rey (A = ±0,02 mm)', X, y + 28, 21, L);
+  btn('cal1', X + 290, y, 145, 42, 'D mayor', { on: S.measuredD1, acc: !S.measuredD1, fs: 21 }); btn('cal2', X + 443, y, 145, 42, 'D menor', { on: S.measuredD2, acc: !S.measuredD2, fs: 21 }); y += 48;
+  txt(S.caliperMsg || ' ', X, y + 22, 21, NF.cian, true); y += 40;
+
+  sect('Cronómetro (A = ±0,01 s)');
+  ctx.fillStyle = '#01031A'; roundRect(ctx, X, y, W, 78, 14); ctx.fill();
+  ctx.strokeStyle = S.sw.run ? NF.cian : '#22306E'; ctx.lineWidth = 2; roundRect(ctx, X + 1, y + 1, W - 2, 76, 13); ctx.stroke();
+  ctx.font = `700 50px ${FT}`; ctx.fillStyle = S.sw.run ? NF.cian : '#FFFFFF'; ctx.fillText(S.sw.t.toFixed(2).replace('.', ',') + ' s', X + 20, y + 58);
+  btn('sw', X + 290, y + 15, 150, 48, S.sw.run ? 'Detener' : 'Iniciar', { acc: !S.sw.run, danger: S.sw.run });
+  btn('swr', X + 450, y + 15, 126, 48, 'Encerar', { fs: 21 }); y += 92;
+  txt('Fila Tabla N°1:', X, y + 30, 21, L); txt(S.rows[S.sel] + ' ml', X + 160, y + 30, 25, '#fff', true);
+  btn('sel-', X + 262, y + 2, 58, 42, '◀'); btn('sel+', X + 328, y + 2, 58, 42, '▶');
+  btn('del', X + 396, y + 2, 192, 42, 'Borrar último', { fs: 20 }); y += 52;
+  btn('save', X, y, 290, 48, 'Guardar tiempo', { acc: true }); btn('auto', X + 298, y, 290, 48, 'Auto ' + NREP + ' tiempos', { fs: 22 }); y += 58;
+
+  sect('Manómetro y práctica');
+  btn('dh', X, y, 290, 48, 'Registrar Δh', { acc: true }); btn('empty', X + 298, y, 290, 48, 'Vaciar probeta'); y += 58;
+  btn('refill', X, y, 290, 46, 'Rellenar frasco', { fs: 22 }); btn('speed', X + 298, y, 290, 46, 'Velocidad ×' + S.speed, { fs: 22 }); y += 56;
+  btn('tup', X, y, 140, 42, 'Mesa ↑', { fs: 20 }); btn('tdn', X + 148, y, 140, 42, 'Mesa ↓', { fs: 20 });
+  btn('tnear', X + 298, y, 141, 42, 'Acercar', { fs: 20 }); btn('tfar', X + 447, y, 141, 42, 'Alejar', { fs: 20 }); y += 52;
+  btn('reset', X, y, W, 42, 'Reiniciar práctica', { danger: true, fs: 20 });
+}
 
 function drawPanel() {
   buttons = [];
-  ctx.clearRect(0, 0, PW, PH);
-  ctx.fillStyle = 'rgba(18,23,34,0.94)'; roundRect(ctx, 0, 0, PW, PH, 28); ctx.fill();
-  ctx.strokeStyle = '#4b5b7a'; ctx.lineWidth = 3; roundRect(ctx, 2, 2, PW - 4, PH - 4, 26); ctx.stroke();
-  txt('Teorema de Bernoulli · Medidor de Venturi', 28, 48, 30, '#ffffff', true);
-  txt('Centro de Física – UCE · Simulador VR', 28, 80, 20, '#9fb0cc');
-
-  // ---- columna de controles
-  let y = 108; const X = 24, W = 560;
-  const row = (label, val) => { txt(label, X, y + 30, 22, '#b9c4d8'); if (val) txt(val, X + 300, y + 30, 22, '#fff', true); };
-  row('Llave del frasco', S.feedOpen ? 'ABIERTA' : 'CERRADA');
-  btn('feed', X + 430, y + 2, 130, 42, S.feedOpen ? 'Cerrar' : 'Abrir', { on: S.feedOpen }); y += 52;
-  row('Válvula de salida', S.outlet + ' %');
-  btn('out-', X + 380, y + 2, 85, 42, '−', { fs: 30 }); btn('out+', X + 475, y + 2, 85, 42, '+', { fs: 30 }); y += 52;
-  row('Válvulas manómetro', S.manOpen ? 'ABIERTAS' : 'CERRADAS');
-  btn('man', X + 430, y + 2, 130, 42, S.manOpen ? 'Cerrar' : 'Abrir', { on: S.manOpen }); y += 52;
-  row('Altura h (Mariotte)', f(S.h * 100, 1) + ' cm');
-  btn('h-', X + 380, y + 2, 85, 42, '−', { fs: 30 }); btn('h+', X + 475, y + 2, 85, 42, '+', { fs: 30 }); y += 58;
-  txt('Pie de rey (±0,02 mm):', X, y + 28, 22, '#b9c4d8');
-  btn('cal1', X + 250, y, 150, 42, 'D mayor', { on: S.measuredD1 }); btn('cal2', X + 410, y, 150, 42, 'D menor', { on: S.measuredD2 }); y += 50;
-  if (S.caliperMsg) txt(S.caliperMsg, X, y + 22, 21, '#ffd479'); y += 34;
-
-  // cronómetro
-  ctx.fillStyle = '#0c1018'; roundRect(ctx, X, y, W, 74, 14); ctx.fill();
-  txt(S.sw.t.toFixed(2) + ' s', X + 20, y + 54, 46, S.sw.run ? '#6cf08f' : '#ffffff', true);
-  btn('sw', X + 270, y + 14, 140, 46, S.sw.run ? 'Parar' : 'Iniciar', { acc: !S.sw.run, danger: S.sw.run });
-  btn('swr', X + 420, y + 14, 130, 46, 'Reiniciar'); y += 86;
-  txt('Fila Tabla 1:', X, y + 30, 22, '#b9c4d8'); txt(S.rows[S.sel] + ' ml', X + 150, y + 30, 26, '#fff', true);
-  btn('sel-', X + 250, y + 2, 60, 42, '◀'); btn('sel+', X + 318, y + 2, 60, 42, '▶');
-  btn('del', X + 390, y + 2, 170, 42, 'Borrar último'); y += 52;
-  btn('save', X, y, 270, 46, 'Guardar tiempo', { acc: true }); btn('auto', X + 280, y, 280, 46, 'Auto ' + NREP + ' tiempos'); y += 56;
-  btn('dh', X, y, 270, 46, 'Registrar Δh', { acc: true }); btn('empty', X + 280, y, 280, 46, 'Vaciar probeta'); y += 56;
-  btn('refill', X, y, 270, 46, 'Rellenar frasco'); btn('speed', X + 280, y, 280, 46, 'Velocidad ×' + S.speed); y += 56;
-  btn('tup', X, y, 130, 42, 'Mesa ↑', { fs: 21 }); btn('tdn', X + 140, y, 130, 42, 'Mesa ↓', { fs: 21 });
-  btn('tnear', X + 280, y, 135, 42, 'Acercar', { fs: 21 }); btn('tfar', X + 425, y, 135, 42, 'Alejar', { fs: 21 }); y += 50;
-  btn('reset', X, y, 560, 40, 'Reiniciar práctica', { danger: true, fs: 21 });
-
-  // ---- pestañas
-  const CX = 610, CW = PW - CX - 24;
+  drawFrame();
+  drawControls();
+  const CX = 664, CW = PW - CX - 24;
   const tw = CW / TABS.length;
-  TABS.forEach((t, i) => btn('tab' + i, CX + i * tw + 3, 100, tw - 6, 48, t, { on: S.tab === i, fs: 21 }));
-  ctx.fillStyle = '#0f141f'; roundRect(ctx, CX, 156, CW, PH - 180, 16); ctx.fill();
+  TABS.forEach((t, i) => btn('tab' + i, CX + i * tw + 3, 112, tw - 6, 50, t, { on: false, acc: S.tab === i, light: S.tab !== i, fs: 20, title: true }));
   const R = results();
-  const cx = CX + 24; let cy = 196;
-  if (S.tab === 0) {
-    STEP_TXT.forEach((s, i) => {
-      const done = S.steps[i];
-      ctx.fillStyle = done ? '#2e8b57' : '#3a4458'; roundRect(ctx, cx, cy - 26, 34, 34, 8); ctx.fill();
-      txt(done ? '✓' : String(i + 1), cx + 17, cy - 1, 22, '#fff', true, 'center');
-      wrap((i + 1) + '. ' + s, cx + 48, cy, CW - 90, 22, done ? '#9fe0b5' : '#e8ecf4', 26); cy += i === 2 || i === 4 || i === 6 || i === 8 ? 62 : 62;
-    });
-  } else if (S.tab === 1) drawTable1(R, cx, cy, CW);
-  else if (S.tab === 2) drawTable2(R, cx, cy, CW);
-  else if (S.tab === 3) drawGraph(R, cx, cy, CW - 48, PH - 250);
-  else drawLupa(cx, cy, CW - 48);
+  let cx = CX + 12, cy = 210;
+  const contentW = CW - 24;
+  if (S.tab === 4) {
+    const sw = 200;
+    SUBS.forEach((t, i) => btn('sub' + i, cx + i * (sw + 8), 174, sw, 40, t, { on: S.sub === i, light: S.sub !== i, fs: 19, r: 20 }));
+    cy = 262;
+  }
+  if (S.tab === 0) drawObjetivos(cx, cy, contentW);
+  else if (S.tab === 1) drawEquipo(cx, cy, contentW);
+  else if (S.tab === 2) drawFundamento(cx, cy, contentW);
+  else if (S.tab === 3) drawProcedimiento(cx, cy, contentW);
+  else if (S.tab === 4) {
+    if (S.sub === 0) drawTable1(R, cx, cy, contentW);
+    else if (S.sub === 1) drawTable2(R, cx, cy, contentW);
+    else if (S.sub === 2) drawGraph(R, cx, cy, contentW, PH - cy - 80);
+    else drawLupa(cx, cy, contentW);
+  } else drawCuestionario(R, cx, cy, contentW);
 
   if (S.toastT > 0 && S.toast) {
-    ctx.fillStyle = 'rgba(224,165,38,0.96)'; roundRect(ctx, CX + 20, PH - 78, CW - 40, 52, 12); ctx.fill();
-    txt(S.toast, CX + 40, PH - 43, 23, '#111', true);
+    ctx.fillStyle = NF.noche; roundRect(ctx, CX + 10, PH - 124, CW - 20, 58, 14); ctx.fill();
+    ctx.strokeStyle = NF.cian; ctx.lineWidth = 3; roundRect(ctx, CX + 11, PH - 123, CW - 22, 56, 13); ctx.stroke();
+    txt(S.toast, CX + 34, PH - 86, 23, '#FFFFFF', true);
   }
   pTex.needsUpdate = true;
 }
-function wrap(s, x, y, maxW, fs, col, lh) {
-  ctx.font = `${fs}px sans-serif`; const words = s.split(' '); let line = '';
-  for (const w of words) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { txt(line, x, y, fs, col); y += lh; line = w; } else line = t; }
-  if (line) txt(line, x, y, fs, col);
+function wrap(s, x, y, maxW, fs, col, lh, bold = false) {
+  ctx.font = `${bold ? '700 ' : '400 '}${fs}px ${FB}`; const words = s.split(' '); let line = '';
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { txt(line, x, y, fs, col, bold); y += lh; line = w; } else line = t; }
+  if (line) { txt(line, x, y, fs, col, bold); y += lh; }
+  return y;
 }
-function drawTable1(R, x, y, CW) {
-  txt('Tabla N°1 · Caudal usando volumen y tiempo', x, y, 24, '#fff', true); y += 14;
-  const cols = ['V (ml)', ...Array.from({ length: NREP }, (_, i) => 't' + (i + 1) + ' (s)'), 'tp (s)', 'Q (ml/s)'];
-  const cw = [150, ...Array.from({ length: NREP }, () => 190), 190, 190];
-  let xx = x; y += 34;
-  cols.forEach((c, i) => { txt(c, xx + 8, y, 21, '#9fb0cc', true); xx += cw[i]; });
-  y += 14;
+function h2(t, x, y) { txt(t, x, y, 30, NF.tinta, true, 'left', FT); ctx.fillStyle = NF.azul; ctx.fillRect(x, y + 10, 70, 4); return y + 52; }
+function badge(n, x, y, col = NF.azul) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x + 18, y - 8, 18, 0, 6.283); ctx.fill();
+  txt(String(n), x + 18, y, 20, '#fff', true, 'center', FT);
+}
+
+function drawObjetivos(x, y, w) {
+  y = h2('Objetivos', x, y);
+  ['Observar el funcionamiento del medidor de Venturi.',
+    'Medir en forma indirecta el caudal o gasto de un fluido a la salida de tubos horizontales.',
+    'Determinar el porcentaje de error al comparar los valores del caudal medidos de dos maneras diferentes.']
+    .forEach((o, i) => { badge(i + 1, x, y); y = wrap(o, x + 52, y, w - 60, 25, NF.tinta, 34) + 16; });
+  y += 20; y = h2('Cómo usar el simulador', x, y);
+  [['Apuntar y pulsar', 'Apunte al panel o a una válvula con el mando (o la mano) y pulse el gatillo (o pellizque).'],
+    ['Botonera de la mesa', 'INICIAR (verde) y DETENER (rojo) controlan el cronómetro; SALIR cierra la sesión VR. También se pulsan tocándolos.'],
+    ['Probeta', 'La escala está ampliada: lea el menisco a la altura de los ojos. La pestaña Lupa muestra las lecturas de cerca.'],
+    ['Pasos', 'La pestaña Procedimiento marca cada paso cumplido.']]
+    .forEach(([t, d]) => { txt(t, x, y, 23, NF.azul, true); y = wrap(d, x + 250, y, w - 260, 22, NF.texto, 30) + 12; });
+}
+function drawEquipo(x, y, w) {
+  y = h2('Equipo de experimentación', x, y);
+  const eq = [
+    ['Medidor de Venturi', 'Sección mayor y sección menor con tomas de presión'],
+    ['Cronómetro', 'A = ±0,01 s'],
+    ['Pie de rey', 'A = ±0,02 mm'],
+    ['Agua', 'ρ = 1 000 kg/m³'],
+    ['Mercurio', 'ρ = 13 600 kg/m³ (manómetro en U)'],
+    ['Mangueras de venoclisis', 'Unen el frasco y el manómetro'],
+    ['Probeta graduada', 'A = ±5 ml · capacidad 500 ml'],
+    ['Recipiente de Mariotte', 'Mantiene constante la altura h'],
+    ['Válvulas', 'Llave del frasco, salida y manómetro'],
+    ['Nivel de burbuja', 'Nivela los tubos horizontales'],
+  ];
+  eq.forEach(([n, d], i) => {
+    ctx.fillStyle = i % 2 ? '#FFFFFF' : '#E3E9FF'; roundRect(ctx, x, y - 30, w, 52, 10); ctx.fill();
+    badge(i + 1, x + 8, y + 2, i % 2 ? NF.azul : NF.violeta);
+    txt(n, x + 62, y + 4, 23, NF.tinta, true); txt(d, x + 420, y + 4, 22, NF.texto);
+    y += 60;
+  });
+  txt('Valores del equipo virtual: D mayor = 7,90 mm · D menor = 2,60 mm (se leen con el pie de rey).', x, y + 14, 20, NF.texto);
+}
+function drawFundamento(x, y, w) {
+  y = h2('Fundamento conceptual', x, y);
+  const blocks = [
+    ['Fluido ideal y tipos de flujo', 'Un fluido incompresible y sin viscosidad que se mueve en régimen estacionario y laminar permite aplicar la conservación de la masa y de la energía a lo largo de una línea de corriente.'],
+    ['Ecuación de continuidad', 'El caudal es el volumen que pasa por unidad de tiempo: Q = V/t = A·v. Como se conserva, A₁·v₁ = A₂·v₂: donde el tubo se estrecha, la velocidad aumenta.'],
+    ['Principio de Bernoulli', 'P + ½ρv² + ρgh = constante. En un tubo horizontal (h igual), la sección menor tiene mayor velocidad y por tanto menor presión.'],
+    ['Medidor y efecto Venturi', 'La caída de presión entre las dos secciones se mide con el manómetro de mercurio: ΔP = g·Δh·(ρHg − ρH₂O). Con ΔP y las áreas se calculan v₁, v₂ y el caudal.'],
+    ['Frasco de Mariotte', 'El tubo de aire fija la presión a su altura, de modo que la carga h sobre el Venturi y el caudal se mantienen constantes mientras el agua esté sobre el extremo del tubo.'],
+    ['Golpe de ariete', 'Al abrir o cerrar bruscamente la válvula, el caudal oscila un instante. Por eso el tiempo se mide desde la marca de 100 ml, cuando el flujo ya es estable.'],
+  ];
+  for (const [t, d] of blocks) { txt(t, x, y, 24, NF.azul, true, 'left', FT); y = wrap(d, x, y + 34, w, 21, NF.texto, 29) + 18; }
+}
+function drawProcedimiento(x, y, w) {
+  y = h2('Procedimiento', x, y);
+  STEP_TXT.forEach((s, i) => {
+    const done = S.steps[i];
+    ctx.fillStyle = done ? NF.violeta : '#D3DCFA'; roundRect(ctx, x, y - 26, 38, 38, 10); ctx.fill();
+    txt(done ? '✓' : String(i + 1), x + 19, y + 1, 21, done ? '#fff' : NF.tinta, true, 'center', FT);
+    const y2 = wrap(s, x + 54, y, w - 64, 22, done ? '#6B3FC4' : NF.tinta, 28, false);
+    y = Math.max(y + 60, y2 + 22);
+  });
+}
+function tableHeader(cols, cw, x, y, w) {
+  ctx.fillStyle = NF.noche; roundRect(ctx, x, y, w, 52, 10); ctx.fill();
+  let xx = x; cols.forEach((c, i) => { txt(c, xx + 12, y + 34, 19, '#FFFFFF', true); xx += cw[i]; });
+  return y + 56;
+}
+function drawTable1(R, x, y, w) {
+  txt('Tabla N°1 · Medidor de Venturi — Caudal usando volumen y tiempo', x, y, 24, NF.tinta, true, 'left', FT); y += 22;
+  const cols = ['V (10⁻⁶ m³)', ...Array.from({ length: NREP }, (_, i) => 't' + (i + 1) + ' (s)'), 'tp (s)', 'Q (10⁻⁶ m³/s)'];
+  const cw = [200, ...Array.from({ length: NREP }, () => 190), 190, 230];
+  const TW = cw.reduce((a, b) => a + b);
+  y = tableHeader(cols, cw, x, y, TW);
   S.rows.forEach((V, ri) => {
     const sel = ri === S.sel;
-    buttons.push({ id: 'row' + ri, x, y, w: cw.reduce((a, b) => a + b), h: 58 });
-    ctx.fillStyle = sel ? '#24406e' : (ri % 2 ? '#161d2b' : '#1b2334'); ctx.fillRect(x, y, cw.reduce((a, b) => a + b), 58);
+    buttons.push({ id: 'row' + ri, x, y, w: TW, h: 60 });
+    ctx.fillStyle = sel ? '#CFE0FF' : (ri % 2 ? '#FFFFFF' : '#F4F6FF'); ctx.fillRect(x, y, TW, 60);
+    if (sel) { ctx.strokeStyle = NF.azul; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, TW - 3, 57); }
     let xx = x; const ts = S.times[V];
-    const cells = [String(V) + (S.assisted[V] ? '*' : ''), ...Array.from({ length: NREP }, (_, i) => i).map(i => ts[i] != null ? ts[i].toFixed(2) : ''), f(R.r1[V].tp), f(R.r1[V].Q)];
-    cells.forEach((c, i) => { txt(c, xx + 8, y + 38, 23, i === 0 ? '#fff' : '#e8ecf4', i === 0); xx += cw[i]; });
+    const cells = [String(V) + (S.assisted[V] ? ' *' : ''), ...Array.from({ length: NREP }, (_, i) => ts[i] != null ? f(ts[i]) : ''), f(R.r1[V].tp), f(R.r1[V].Q)];
+    cells.forEach((c, i) => { txt(c, xx + 12, y + 39, 24, NF.tinta, i === 0 || i === cells.length - 1); xx += cw[i]; });
     y += 62;
   });
-  y += 30;
-  txt('Qp = ' + f(R.Qp1) + ' ×10⁻⁶ m³/s', x, y, 28, '#ffd479', true); y += 40;
-  txt('1 ml = 10⁻⁶ m³ → Q en ml/s = Q en 10⁻⁶ m³/s.   Q = V / tp', x, y, 20, '#9fb0cc'); y += 30;
-  txt('Seleccione la fila (toque) y mida desde la marca de 100 ml (evita el golpe de ariete).', x, y, 20, '#9fb0cc'); y += 28;
-  if (Object.keys(S.assisted).length) txt('* fila con tiempos generados por "Auto ' + NREP + ' tiempos" (asistido).', x, y, 20, '#c9a3ff');
+  y += 46;
+  ctx.fillStyle = NF.noche; roundRect(ctx, x, y - 38, 560, 58, 12); ctx.fill();
+  txt('Qp = ' + f(R.Qp1) + ' × 10⁻⁶ m³/s', x + 20, y + 2, 28, NF.cian, true, 'left', FT); y += 56;
+  txt('Q = V / tp      1 ml = 10⁻⁶ m³', x, y, 21, NF.texto); y += 32;
+  txt('Toque una fila para seleccionarla. Mida desde la marca de 100 ml (evita el golpe de ariete).', x, y, 20, NF.texto); y += 30;
+  if (Object.keys(S.assisted).length) txt('* tiempos generados con «Auto ' + NREP + ' tiempos» (asistido).', x, y, 20, NF.violeta, true);
 }
-function drawTable2(R, x, y, CW) {
-  txt('Tabla N°2 · Caudal usando el manómetro', x, y, 24, '#fff', true); y += 46;
-  const cols = ['Sección', 'D (mm)', 'A (10⁻⁶m²)', 'A² (10⁻¹²m⁴)', 'Δh (mm)', 'ΔP (Pa)', 'v (m/s)', 'Q (ml/s)'];
-  const cw = [120, 105, 135, 150, 105, 110, 105, 110];
-  let xx = x; cols.forEach((c, i) => { txt(c, xx + 6, y, 19, '#9fb0cc', true); xx += cw[i]; }); y += 14;
+function drawTable2(R, x, y, w) {
+  txt('Tabla N°2 · Medidor de Venturi — Caudal usando el manómetro', x, y, 24, NF.tinta, true, 'left', FT); y += 22;
+  const cols = ['Sección', 'D (10⁻³m)', 'A (10⁻⁶m²)', 'A² (10⁻¹²m⁴)', 'Δh (10⁻³m)', 'ΔP (Pa)', 'v (m/s)', 'Q (10⁻⁶m³/s)'];
+  const cw = [118, 132, 138, 158, 140, 112, 112, 160];
+  const TW = cw.reduce((a, b) => a + b);
+  y = tableHeader(cols, cw, x, y, TW);
   const t2 = R.t2;
   const rowsD = [
     ['Mayor', S.measuredD1 ? D1 * 1e3 : null, A1 * 1e6, A1 * A1 * 1e12, t2 ? t2.v1 : null, t2 ? t2.q1 : null, S.measuredD1],
     ['Menor', S.measuredD2 ? D2 * 1e3 : null, A2 * 1e6, A2 * A2 * 1e12, t2 ? t2.v2 : null, t2 ? t2.q2 : null, S.measuredD2]];
   rowsD.forEach((r, i) => {
-    ctx.fillStyle = i ? '#161d2b' : '#1b2334'; ctx.fillRect(x, y, cw.reduce((a, b) => a + b), 58);
+    ctx.fillStyle = i ? '#FFFFFF' : '#F4F6FF'; ctx.fillRect(x, y, TW, 60);
     const cells = [r[0], f(r[1]), r[6] ? f(r[2], 2) : '—', r[6] ? f(r[3], 1) : '—', S.dhRec != null ? f(S.dhRec, 1) : '—', t2 ? f(t2.dP, 0) : '—', f(r[4], 3), f(r[5])];
-    let xx = x; cells.forEach((c, j) => { txt(c, xx + 6, y + 38, 22, j === 0 ? '#fff' : '#e8ecf4', j === 0); xx += cw[j]; }); y += 62;
+    let xx = x; cells.forEach((c, j) => { txt(c, xx + 12, y + 39, 23, NF.tinta, j === 0); xx += cw[j]; }); y += 62;
   });
-  y += 34;
-  txt('ΔP = g·Δh·(ρHg − ρH₂O)      v₁ = A₂·√(2ΔP / ρ(A₁²−A₂²))      v₂ = A₁·√(2ΔP / ρ(A₁²−A₂²))      Q = v·A', x, y, 19, '#9fb0cc'); y += 30;
-  txt('ρHg = 13 600 kg/m³   ρH₂O = 1 000 kg/m³   g = 9,81 m/s²', x, y, 19, '#9fb0cc'); y += 54;
-  txt('Qp (manómetro) = ' + (t2 ? f(t2.Qp) : '—') + ' ×10⁻⁶ m³/s', x, y, 26, '#ffd479', true); y += 40;
-  txt('Qp (volumen/tiempo) = ' + f(R.Qp1) + ' ×10⁻⁶ m³/s', x, y, 26, '#ffd479', true); y += 50;
-  txt('% error = |Q_man − Q_vol| / Q_vol × 100 = ' + (R.err != null ? f(R.err, 1) + ' %' : '—'), x, y, 28, '#6cf08f', true); y += 40;
+  y += 40;
+  txt('ΔP = g·Δh·(ρHg − ρH₂O)     v₁ = A₂·√[2ΔP / ρH₂O(A₁² − A₂²)]     v₂ = A₁·√[2ΔP / ρH₂O(A₁² − A₂²)]     Q = v·A', x, y, 19, NF.texto); y += 30;
+  txt('ρHg = 13 600 kg/m³     ρH₂O = 1 000 kg/m³     g = 9,81 m/s²', x, y, 19, NF.texto); y += 64;
+  const box = (label, val, col) => { ctx.fillStyle = NF.noche; roundRect(ctx, x, y - 38, 760, 56, 12); ctx.fill(); txt(label, x + 20, y, 24, '#FFFFFF', true, 'left', FT); txt(val, x + 740, y, 26, col, true, 'right', FT); y += 66; };
+  box('Qp (manómetro)', (t2 ? f(t2.Qp) : '—') + ' × 10⁻⁶ m³/s', NF.cian);
+  box('Qp (volumen / tiempo)', f(R.Qp1) + ' × 10⁻⁶ m³/s', NF.cian);
+  box('% de error', R.err != null ? f(R.err, 1) + ' %' : '—', '#C9A8FF');
   if (S.condRec && S.condT1.out != null && (S.condRec.out !== S.condT1.out || Math.abs(S.condRec.h - S.condT1.h) > 1e-6))
-    txt('⚠ La válvula de salida o h cambiaron entre la Tabla 1 y la medida de Δh.', x, y, 21, '#ff9a8a', true);
-  if (!S.measuredD1 || !S.measuredD2) txt('Mida ambos diámetros con el pie de rey para completar la tabla.', x, y + 30, 20, '#9fb0cc');
+    txt('⚠ La válvula de salida o h cambiaron entre la Tabla N°1 y la medida de Δh.', x, y, 21, NF.peligro, true);
+  else if (!S.measuredD1 || !S.measuredD2) txt('Mida ambos diámetros con el pie de rey para completar la tabla.', x, y, 20, NF.texto);
+}
+function fitV(pts) {
+  const n = pts.length, sx = pts.reduce((a, p) => a + p[0], 0), sy = pts.reduce((a, p) => a + p[1], 0);
+  const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0), sxy = pts.reduce((a, p) => a + p[0] * p[1], 0);
+  const m = (n * sxy - sx * sy) / (n * sxx - sx * sx), b = (sy - m * sx) / n;
+  let ssr = 0, sst = 0; const ym = sy / n; pts.forEach(p => { ssr += (p[1] - (m * p[0] + b)) ** 2; sst += (p[1] - ym) ** 2; });
+  return { m, b, r2: 1 - ssr / sst, m0: sxy / sxx };
 }
 function drawGraph(R, x, y, w, h) {
-  txt('Diagrama V = f(t)  (datos de la Tabla 1)', x, y, 24, '#fff', true);
+  txt('Diagrama V = f(t) · datos de la Tabla N°1', x, y, 24, NF.tinta, true, 'left', FT);
   const pts = S.rows.filter(V => R.r1[V].tp).map(V => [R.r1[V].tp, V]);
-  const gx = x + 80, gy = y + 30, gw = w - 110, gh = h - 110;
+  const gx = x + 90, gy = y + 30, gw = w - 120, gh = h - 100;
+  ctx.fillStyle = '#FFFFFF'; roundRect(ctx, gx - 10, gy - 10, gw + 20, gh + 20, 10); ctx.fill();
   const tmax = Math.max(10, ...pts.map(p => p[0])) * 1.15, vmax = 450;
-  ctx.strokeStyle = '#2b3550'; ctx.lineWidth = 1;
-  for (let i = 0; i <= 9; i++) { const yy = gy + gh - i * 50 / vmax * gh; ctx.beginPath(); ctx.moveTo(gx, yy); ctx.lineTo(gx + gw, yy); ctx.stroke(); if (i % 2 === 0) txt(String(i * 50), gx - 12, yy + 7, 18, '#9fb0cc', false, 'right'); }
-  const step = tmax > 100 ? 20 : (tmax > 40 ? 10 : 5);
-  for (let t = 0; t <= tmax; t += step) { const xx = gx + t / tmax * gw; ctx.beginPath(); ctx.moveTo(xx, gy); ctx.lineTo(xx, gy + gh); ctx.stroke(); txt(String(t), xx, gy + gh + 26, 18, '#9fb0cc', false, 'center'); }
-  ctx.strokeStyle = '#9fb0cc'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
-  txt('t (s)', gx + gw, gy + gh + 54, 20, '#e8ecf4', true, 'right');
-  ctx.save(); ctx.translate(x + 14, gy + gh / 2); ctx.rotate(-Math.PI / 2); txt('V (ml = 10⁻⁶ m³)', 0, 0, 20, '#e8ecf4', true, 'center'); ctx.restore();
+  ctx.strokeStyle = '#DCE3F7'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 9; i++) { const yy = gy + gh - i * 50 / vmax * gh; ctx.beginPath(); ctx.moveTo(gx, yy); ctx.lineTo(gx + gw, yy); ctx.stroke(); if (i % 2 === 0) txt(String(i * 50), gx - 18, yy + 7, 18, NF.texto, false, 'right'); }
+  const stp = tmax > 100 ? 20 : (tmax > 40 ? 10 : 5);
+  for (let t = 0; t <= tmax; t += stp) { const xx = gx + t / tmax * gw; ctx.beginPath(); ctx.moveTo(xx, gy); ctx.lineTo(xx, gy + gh); ctx.stroke(); txt(String(t), xx, gy + gh + 34, 18, NF.texto, false, 'center'); }
+  ctx.strokeStyle = NF.tinta; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
+  txt('t (s)', gx + gw, gy + gh + 64, 20, NF.tinta, true, 'right');
+  ctx.save(); ctx.translate(x + 18, gy + gh / 2); ctx.rotate(-Math.PI / 2); txt('V (10⁻⁶ m³)', 0, 0, 20, NF.tinta, true, 'center'); ctx.restore();
   if (pts.length >= 2) {
-    const n = pts.length, sx = pts.reduce((a, p) => a + p[0], 0), sy = pts.reduce((a, p) => a + p[1], 0);
-    const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0), sxy = pts.reduce((a, p) => a + p[0] * p[1], 0);
-    const m = (n * sxy - sx * sy) / (n * sxx - sx * sx), b = (sy - m * sx) / n;
-    const m0 = sxy / sxx; // recta por el origen
-    ctx.strokeStyle = '#e0a526'; ctx.lineWidth = 3; ctx.beginPath();
+    const { m, b, r2, m0 } = fitV(pts);
+    ctx.strokeStyle = NF.violeta; ctx.lineWidth = 4; ctx.beginPath();
     ctx.moveTo(gx, gy + gh - b / vmax * gh); ctx.lineTo(gx + gw, gy + gh - (m * tmax + b) / vmax * gh); ctx.stroke();
-    let ssr = 0, sst = 0; const ym = sy / n; pts.forEach(p => { ssr += (p[1] - (m * p[0] + b)) ** 2; sst += (p[1] - ym) ** 2; });
-    const r2 = 1 - ssr / sst;
-    txt(`Ajuste lineal: V = ${f(m, 3)}·t ${b >= 0 ? '+' : '−'} ${f(Math.abs(b), 2)}    R² = ${f(r2, 4)}`, gx + 20, gy + 30, 22, '#ffd479', true);
-    txt(`Pendiente = caudal ≈ ${f(m, 2)} ml/s  (por el origen: ${f(m0, 2)} ml/s)`, gx + 20, gy + 60, 21, '#e8ecf4');
-  } else txt('Registre al menos dos filas de la Tabla 1 para trazar la recta.', gx + 20, gy + 30, 21, '#9fb0cc');
-  ctx.fillStyle = '#4fb3ff';
-  pts.forEach(p => { ctx.beginPath(); ctx.arc(gx + p[0] / tmax * gw, gy + gh - p[1] / vmax * gh, 9, 0, 6.283); ctx.fill(); });
+    txt(`Ajuste lineal: V = ${f(m, 3)}·t ${b >= 0 ? '+' : '−'} ${f(Math.abs(b), 2)}     R² = ${f(r2, 4)}`, gx + 20, gy + 34, 22, NF.tinta, true);
+    txt(`Pendiente = caudal ≈ ${f(m, 2)} × 10⁻⁶ m³/s   (recta por el origen: ${f(m0, 2)})`, gx + 20, gy + 64, 21, NF.texto);
+  } else txt('Registre al menos dos filas de la Tabla N°1 para trazar la recta.', gx + 20, gy + 34, 21, NF.texto);
+  pts.forEach(p => { ctx.fillStyle = NF.azul; ctx.beginPath(); ctx.arc(gx + p[0] / tmax * gw, gy + gh - p[1] / vmax * gh, 10, 0, 6.283); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); });
 }
 function drawLupa(x, y, w) {
-  txt('Lupa: lectura ampliada de los instrumentos', x, y, 24, '#fff', true);
-  // manómetro
-  const bx = x, by = y + 24, bw = 430, bh = 560;
-  ctx.fillStyle = '#f4f1e6'; ctx.fillRect(bx, by, bw, bh);
+  txt('Lupa: lectura ampliada de los instrumentos', x, y, 24, NF.tinta, true, 'left', FT);
+  const bx = x, by = y + 26, bw = 440, bh = 600;
+  ctx.fillStyle = '#F7F4E8'; ctx.fillRect(bx, by, bw, bh);
   const yL = (MAN_REST - S.dhv / 2) * 1000, yR = (MAN_REST + S.dhv / 2) * 1000; // mm
   const center = (yL + yR) / 2, pxmm = 14; const mm0 = center - bh / 2 / pxmm;
   const Y = mm => by + bh - (mm - mm0) * pxmm;
   ctx.save(); ctx.beginPath(); ctx.rect(bx, by, bw, bh); ctx.clip();
   for (let mm = Math.floor(mm0); mm < mm0 + bh / pxmm + 1; mm++) {
-    const yy = Y(mm); const L = mm % 10 === 0 ? 60 : (mm % 5 === 0 ? 40 : 22);
-    ctx.fillStyle = '#111'; ctx.fillRect(bx + bw / 2 - L / 2, yy - 1, L, 2);
+    const yy = Y(mm); const Ln = mm % 10 === 0 ? 60 : (mm % 5 === 0 ? 40 : 22);
+    ctx.fillStyle = '#111'; ctx.fillRect(bx + bw / 2 - Ln / 2, yy - 1, Ln, 2);
     if (mm % 10 === 0) txt(String(mm / 10) + ' cm', bx + bw / 2 + 38, yy + 7, 18, '#111', true);
   }
-  for (const [xc, lev] of [[bx + 90, yL], [bx + bw - 90, yR]]) {
+  for (const [xc, lev] of [[bx + 92, yL], [bx + bw - 92, yR]]) {
     ctx.fillStyle = 'rgba(160,200,230,0.35)'; ctx.fillRect(xc - 26, by, 52, bh);
-    ctx.fillStyle = 'rgba(63,160,255,0.55)'; ctx.fillRect(xc - 22, by, 44, Y(lev) - by);
+    ctx.fillStyle = 'rgba(63,139,251,0.5)'; ctx.fillRect(xc - 22, by, 44, Y(lev) - by);
     const grd = ctx.createLinearGradient(xc - 22, 0, xc + 22, 0); grd.addColorStop(0, '#8d939c'); grd.addColorStop(0.45, '#f4f6f8'); grd.addColorStop(1, '#7c828b');
     ctx.fillStyle = grd; ctx.beginPath(); ctx.moveTo(xc - 22, by + bh); ctx.lineTo(xc - 22, Y(lev) + 6); ctx.quadraticCurveTo(xc, Y(lev) - 8, xc + 22, Y(lev) + 6); ctx.lineTo(xc + 22, by + bh); ctx.fill();
   }
   ctx.restore();
-  txt('Rama A1 (mayor)', bx + 90, by + bh + 28, 19, '#e8ecf4', true, 'center');
-  txt('Rama A2 (menor)', bx + bw - 90, by + bh + 28, 19, '#e8ecf4', true, 'center');
-  txt('Manómetro (escala en mm)', bx, by + bh + 58, 20, '#9fb0cc');
+  txt('Rama A₁ (mayor)', bx + 92, by + bh + 30, 19, NF.tinta, true, 'center');
+  txt('Rama A₂ (menor)', bx + bw - 92, by + bh + 30, 19, NF.tinta, true, 'center');
   // probeta
-  const px = x + 500, pw = 300;
-  ctx.fillStyle = '#26324a'; ctx.fillRect(px, by, pw, bh);
+  const px = x + 500, pw = 320;
+  ctx.fillStyle = NF.noche; ctx.fillRect(px, by, pw, bh);
   const v = S.probV, ml0 = v - 30, pxml = bh / 60; const YV = ml => by + bh - (ml - ml0) * pxml;
   ctx.save(); ctx.beginPath(); ctx.rect(px, by, pw, bh); ctx.clip();
-  ctx.fillStyle = 'rgba(63,160,255,0.65)'; ctx.fillRect(px, YV(v), pw, by + bh - YV(v));
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = 'rgba(63,139,251,0.7)'; ctx.fillRect(px, YV(v), pw, by + bh - YV(v));
   for (let ml = Math.ceil(ml0 / 5) * 5; ml < ml0 + 61; ml += 5) {
-    if (ml < 0 || ml > 500) continue; const yy = YV(ml); const L = ml % 50 === 0 ? 130 : (ml % 10 === 0 ? 85 : 45);
-    ctx.fillRect(px, yy - 1.5, L, 3); if (ml % 10 === 0) txt(String(ml), px + L + 10, yy + 8, 22, '#fff', true);
+    if (ml < 0 || ml > 500) continue; const yy = YV(ml); const Ln = ml % 50 === 0 ? 130 : (ml % 10 === 0 ? 85 : 45);
+    ctx.fillStyle = ml % 50 === 0 ? '#FFD23F' : '#FFFFFF'; ctx.fillRect(px, yy - 1.5, Ln, 3); if (ml % 10 === 0) txt(String(ml), px + Ln + 10, yy + 8, 22, ml % 50 === 0 ? '#FFD23F' : '#fff', true);
   }
   ctx.restore();
-  txt('Probeta (div. 5 ml)', px, by + bh + 28, 19, '#e8ecf4', true);
-  txt('Las lecturas se hacen', px + 330, by + 60, 20, '#9fb0cc');
-  txt('a la altura de los ojos,', px + 330, by + 88, 20, '#9fb0cc');
-  txt('en el menisco.', px + 330, by + 116, 20, '#9fb0cc');
-  txt('Hg: borde superior', px + 330, by + 170, 20, '#9fb0cc');
-  txt('(menisco convexo).', px + 330, by + 198, 20, '#9fb0cc');
+  txt('Probeta (div. 5 ml)', px, by + bh + 30, 19, NF.tinta, true);
+  let ty = by + 40;
+  ['Lea a la altura de los ojos.', 'Agua: parte baja del', 'menisco (cóncavo).', 'Mercurio: borde superior', '(menisco convexo).'].forEach(s => { txt(s, px + 350, ty, 20, NF.texto); ty += 30; });
+}
+function drawCuestionario(R, x, y, w) {
+  y = h2('Cuestionario', x, y);
+  const q = (n, t) => { badge(n, x, y); return wrap(t, x + 52, y, w - 60, 22, NF.tinta, 29, true) + 6; };
+  const a = (t, col = NF.texto) => { y = wrap(t, x + 52, y, w - 60, 21, col, 28) + 4; };
+  y = q(1, 'Calcular con los valores obtenidos el caudal para cada volumen: Q = V / tp.');
+  a(S.rows.map(V => `${V} ml → ${f(R.r1[V].Q)}`).join('     ') + '   (× 10⁻⁶ m³/s)', NF.azul);
+  y += 10;
+  y = q(2, 'Con la Tabla N°2 calcular ΔP, las velocidades en las dos secciones, el caudal y el caudal promedio.');
+  const t2 = R.t2;
+  if (t2) a(`ΔP = ${f(t2.dP, 0)} Pa     v₁ = ${f(t2.v1, 3)} m/s     v₂ = ${f(t2.v2, 3)} m/s     Q₁ = ${f(t2.q1)}     Q₂ = ${f(t2.q2)}     Qp = ${f(t2.Qp)} × 10⁻⁶ m³/s`, NF.azul);
+  else a('Complete la Tabla N°2 (diámetros y Δh) para ver los resultados.');
+  y += 10;
+  y = q(3, 'Comparar los valores obtenidos de la pregunta 1 con los de la pregunta 2.');
+  if (R.err != null) a(`Qp (volumen/tiempo) = ${f(R.Qp1)}  ·  Qp (manómetro) = ${f(t2.Qp)}  →  % error = |Q_man − Q_vol| / Q_vol × 100 = ${f(R.err, 1)} %`, NF.violeta);
+  else a('Necesita la Tabla N°1 y la Tabla N°2 completas.');
+  y += 10;
+  y = q(4, 'Graficar y analizar el diagrama V = f(t) con los valores de la Tabla N°1.');
+  const pts = S.rows.filter(V => R.r1[V].tp).map(V => [R.r1[V].tp, V]);
+  if (pts.length >= 2) { const { m, r2 } = fitV(pts); a(`La relación es lineal (R² = ${f(r2, 4)}): el volumen crece proporcionalmente al tiempo y la pendiente, ${f(m, 2)} × 10⁻⁶ m³/s, es el caudal. Vea la gráfica en Registro de datos → Gráfica.`, NF.azul); }
+  else a('Registre al menos dos volúmenes para analizar la gráfica.');
+  y += 10;
+  txt('Escriba sus conclusiones en el informe de la práctica.', x, y + 10, 20, NF.texto);
 }
 
 // ---------------------------------------------------------------- acciones
 function act(id) {
   dirty = true;
   if (id.startsWith('tab')) { S.tab = +id.slice(3); return; }
+  if (id.startsWith('sub')) { S.sub = +id.slice(3); return; }
   if (id.startsWith('row')) { S.sel = +id.slice(3); return; }
   switch (id) {
     case 'feed': S.feedOpen = !S.feedOpen; break;
@@ -672,7 +903,7 @@ function act(id) {
       if (!S.manOpen) { toast('Abra las válvulas del manómetro para medir Δh.'); break; }
       if (S.Q < 1e-8) { toast('No hay flujo: Δh sería 0.'); break; }
       S.dhRec = Math.round(S.dhv * 1000 * 2) / 2; S.condRec = { out: S.outlet, h: S.h };
-      toast('Δh = ' + S.dhRec.toFixed(1) + ' mm registrado en la Tabla 2.'); S.tab = 2; break;
+      toast('Δh = ' + S.dhRec.toFixed(1).replace('.', ',') + ' mm registrado en la Tabla N°2.'); S.tab = 4; S.sub = 1; break;
     }
     case 'empty': S.probV = 0; S.overflow = false; break;
     case 'refill': S.bottleLevel = 0.28; break;
@@ -684,7 +915,7 @@ function act(id) {
     case 'reset': Object.assign(S, {
       feedOpen: false, outlet: 0, manOpen: true, h: 0.40, fill: 0, Q: 0, Qv: 0, dh: 0, dhv: 0, bottleLevel: 0.28, probV: 0, overflow: false,
       sw: { run: false, t: 0 }, measuredD1: false, measuredD2: false, caliperMsg: '', times: { 100: [], 200: [], 300: [], 400: [] }, assisted: {}, sel: 0,
-      dhRec: null, condRec: null, condT1: {}, steps: new Array(10).fill(false), step5seen: false, tab: 0 }); break;
+      dhRec: null, condRec: null, condT1: {}, steps: new Array(10).fill(false), step5seen: false, tab: 3, sub: 0 }); break;
   }
 }
 function pressAnim(id) { const b = tableButtons.find(b => b.id === id); if (b) b.press = 0.25; }
@@ -930,7 +1161,7 @@ renderer.setAnimationLoop(() => {
   updateButtons(dt);
   updateValveLabels();
   acc += dt; swAcc += dt;
-  const live = S.sw.run || S.tab === 4 || (S.tab === 0) || Math.abs(S.dh) > 1e-5;
+  const live = S.sw.run || S.tab >= 3 || Math.abs(S.dh) > 1e-5;
   if (dirty || (live && acc > 0.1)) { drawPanel(); dirty = false; acc = 0; }
   if (swAcc > 0.05) { drawSwLabel(); swAcc = 0; }
   renderer.render(scene, camera);
